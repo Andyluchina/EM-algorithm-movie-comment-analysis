@@ -162,7 +162,7 @@ def parse_data():
     # CHARACTER-BASED MODEL !!!!!!!!!!!!!!
     train_vocab = build_vocab_chars(paths)
     end = time()
-    print('done in', end-begin, 'seconds.  Found', len(train_vocab), 'unique tokens.')
+    print('Done in', end - begin, 'seconds.  Found', len(train_vocab), 'unique tokens.')
     print('Begin loading all data and converting to ints... ', end='')
     sys.stdout.flush()
     begin = time()
