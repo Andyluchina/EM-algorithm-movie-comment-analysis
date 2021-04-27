@@ -83,6 +83,8 @@ def convert_words_to_ints(sample, vocab):
 def convert_chars_to_ints(sample, vocab):
     answer = np.zeros(len(sample), dtype=np.uint)
     for n, token in enumerate(sample):
+        if token not in vocab:
+            return None
         answer[n] = vocab.get(token, 0)
     return answer
 
@@ -147,13 +149,12 @@ def load_and_convert_data_chars_to_ints(paths, vocab):
     return data
 
 
-def parse_data():
+def parse_data(this_path):
 
     print("NLP Util smoketest.")
 
     # CHANGE HERE !!!!!!!!!!!!!!!
-    paths = ['/Users/zhanghaoqi/Desktop/csc246p3/csc246project3/imdbFor246/train/pos',
-             '/Users/zhanghaoqi/Desktop/csc246p3/csc246project3/imdbFor246/train/neg']
+    paths = [this_path]
     # CHANGE HERE !!!!!!!!!!!!!!!
 
     print("Begin loading vocab... ", end='')
@@ -178,4 +179,3 @@ def parse_data():
     # print('Press enter to quit.')
     # input()
     # print('Quitting.. may take some time to free memory.')
-
