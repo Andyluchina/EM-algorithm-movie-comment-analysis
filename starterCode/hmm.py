@@ -70,25 +70,18 @@ class HMM:
     __slots__ = ('pi', 'transitions', 'emissions', 'num_states', 'vocab_size')
 
     def init_N_by_N_matrix(N):  # N = number of hidden states
-        matrix = []
-        for i in range(N):
-            matrix.append([])
-            for j in range(N):
-                matrix[i].append(0)
-        return matrix
+        return np.zeros((N,N))
 
     # The constructor should initalize all the model parameters.
     def __init__(self, num_states, vocab_size):
 
         factor = 0.0  # normalization
 
-        pi = []  # 1 * N
-        for _ in range(num_states):
-            seed = 1.0 - random.uniform(0.0, 1.0)  # (0.0, 1.0]
-            factor += seed
-            pi.append(seed)
-        for i in range(num_states):
-            pi[i] /= factor
+        pi = np.random.rand(1, num_states)  # 1 * N
+        factor = pi.sum()
+        pi = pi/factor
+        print(pi)
+
 
         transitions = []  # N * N
         for i in range(num_states):
