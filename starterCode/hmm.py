@@ -164,7 +164,7 @@ class HMM:
             print("alpha1")
             print(alpha[t])
             print("alpha2")
-            print(alpha[t - 1].dot(transitions))
+            print(alpha[t - 1].dot(transitions.transpose()))
             c[t] = 1.0 / c[t]
             for i in range(num_states):
                 alpha[t][i] *= c[t]
