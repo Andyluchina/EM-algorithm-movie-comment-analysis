@@ -159,10 +159,10 @@ class HMM:
             for i in range(num_states):
                 for j in range(num_states):
                     alpha[t][i] += (alpha[t - 1][j] * transitions[j][i])
-                print("alpha1")
-                print(alpha[t])
-                print("alpha2")
-                print(alpha[t - 1].dot(transitions))
+            print("alpha1")
+            print(alpha[t])
+            print("alpha2")
+            print(alpha[t - 1].dot(transitions))
                 alpha[t][i] *= emissions[i][int(sample[t] - 1)]
                 c[t] += alpha[t][i]
             c[t] = 1.0 / c[t]
