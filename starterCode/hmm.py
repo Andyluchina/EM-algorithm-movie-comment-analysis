@@ -153,6 +153,7 @@ class HMM:
             alpha[t] = alpha[t] / c[t]
 
         c = 1 / c
+        print(c)
         # for t in range(1, T):
         #     for i in range(num_states):
         #         for j in range(num_states):
