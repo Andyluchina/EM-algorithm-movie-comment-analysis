@@ -80,30 +80,17 @@ class HMM:
         pi = np.random.rand(num_states)  # 1 * N
         factor = pi.sum()
         pi = pi/factor
-        print(pi)
 
 
-        transitions = []  # N * N
-        for i in range(num_states):
-            transitions.append([])
-            factor = 0.0
-            for _ in range(num_states):
-                seed = 1.0 - random.uniform(0.0, 1.0)
-                factor += seed
-                transitions[i].append(seed)
-            for j in range(num_states):
-                transitions[i][j] /= factor
+        transitions = np.random.rand(num_states, num_states)  # N * N
+        factor = transitions.sum()
+        transitions = transitions/factor
+        print(transitions)
 
-        emissions = []  # N * vocab_size
-        for i in range(num_states):
-            emissions.append([])
-            factor = 0.0
-            for _ in range(vocab_size):
-                seed = 1.0 - random.uniform(0.0, 1.0)
-                factor += seed
-                emissions[i].append(seed)
-            for j in range(0, vocab_size):
-                emissions[i][j] /= factor
+        emissions = np.random.rand(num_states, vocab_size)  # N * vocab_size
+        factor = emissions.sum()
+        emissions = emissions/factor
+        print(emissions)
 
         # initialize HMM
         self.pi = pi
