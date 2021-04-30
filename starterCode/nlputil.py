@@ -199,7 +199,7 @@ def parse_data_with_existing_vocab(this_path, vocab):
     sys.stdout.flush()
     begin = time()
     # CHARACTER-BASED MODEL !!!!!!!!!!!!!!
-    train_vocab = build_vocab_chars_with_existing_vocab(paths)
+    train_vocab = build_vocab_chars_with_existing_vocab(paths, vocab)
     end = time()
     print('Done in', end - begin, 'seconds.  Found', len(train_vocab), 'unique tokens.')
     print('Begin loading all data and converting to ints... ', end='')
