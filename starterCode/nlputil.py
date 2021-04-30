@@ -22,7 +22,7 @@ import sys
 #                             (i.e., this maps strings to matrices).
 #
 # There are parallel methods included for working with either word-based or character-based models.
-# In both cases, unknown words will always map to integer value 0. 
+# In both cases, unknown words will always map to integer value 0.
 
 # Note -- File IO is slow, so it's best if you can keep as much data in RAM as possible.
 # Converting to a word-based one-hot representation is EXTREMELY memory intensive (many huge vectors of ints).
@@ -57,6 +57,19 @@ def build_vocab_words(paths):
 def build_vocab_chars(paths):
     vocab = {}
     nextValue = 1
+    for path in paths:
+        for filename in os.listdir(path):
+            with open(os.path.join(path, filename)) as fh:
+                sequence = fh.read()
+                for character in sequence:
+                    if character not in vocab:
+                        vocab[character] = nextValue
+                        nextValue += 1
+    return vocab
+
+def build_vocab_chars_with_existing_vocab(paths, vocab):
+    # vocab = {}
+    nextValue = len(vocab) + 1
     for path in paths:
         for filename in os.listdir(path):
             with open(os.path.join(path, filename)) as fh:
@@ -110,7 +123,7 @@ def convert_chars_to_onehot(sample, vocab):
 
 
 # Read every file located at given path, convert to one-hot OR integer representation,
-# and collect the results into a python list. 
+# and collect the results into a python list.
 def load_and_convert_data_words_to_onehot(paths, vocab):
     data = []
     for path in paths:
@@ -173,6 +186,31 @@ def parse_data(this_path):
     print('done in', end-begin, 'seconds.')
 
     return train_data, train_vocab
+
+def parse_data_with_existing_vocab(this_path, vocab):
+
+    print("NLP Util smoketest.")
+
+    # CHANGE HERE !!!!!!!!!!!!!!!
+    paths = [this_path]
+    # CHANGE HERE !!!!!!!!!!!!!!!
+
+    print("Begin loading vocab... ", end='')
+    sys.stdout.flush()
+    begin = time()
+    # CHARACTER-BASED MODEL !!!!!!!!!!!!!!
+    train_vocab = build_vocab_chars_with_existing_vocab(paths)
+    end = time()
+    print('Done in', end - begin, 'seconds.  Found', len(train_vocab), 'unique tokens.')
+    print('Begin loading all data and converting to ints... ', end='')
+    sys.stdout.flush()
+    begin = time()
+    # CHAR TO INTEGER !!!!!!!!!!!!!!!!!
+    train_data = load_and_convert_data_chars_to_ints(paths, train_vocab)
+    end = time()
+    print('done in', end-begin, 'seconds.')
+
+    return train_data
 
     # print(len(data))
     # print("Data[0] = ", data[0])

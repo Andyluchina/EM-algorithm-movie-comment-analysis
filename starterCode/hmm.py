@@ -369,11 +369,11 @@ def main():
     print()
     train_data1, train_vocab1 = parse_data(args.train_path_pos)
     print()
-    train_data2, train_vocab2 = parse_data(args.train_path_neg)
+    train_data2 = parse_data_with_existing_vocab(args.train_path_neg, train_vocab1)
     print("=======================================================================================")
 
     hmm1 = HMM(args.hidden_states, len(train_vocab1))
-    hmm2 = HMM(args.hidden_states, len(train_vocab2))
+    hmm2 = HMM(args.hidden_states, len(train_vocab1))
 
     new_pos_pi = hmm1.pi
     new_pos_transitions = hmm1.transitions
@@ -468,7 +468,7 @@ def main():
     for path in paths_test_neg:
         for filename in os.listdir(path):
             with open(os.path.join(path, filename)) as fh:
-                answer = convert_chars_to_ints(fh.read(), train_vocab2)
+                answer = convert_chars_to_ints(fh.read(), train_vocab1)
                 if answer is not None:
                     test_neg.append(answer)
 
