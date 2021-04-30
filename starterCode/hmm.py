@@ -133,8 +133,8 @@ class HMM:
         if T == 0:
             return -math.inf
 
-        c = [0.0] * T #1*T
-        alpha = [[0] * num_states]
+        c = np.zeros(T) #1*T
+        alpha = np.zeros((1,num_states))
         print(c)
         print(alpha)
 
