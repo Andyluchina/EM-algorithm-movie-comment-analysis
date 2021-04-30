@@ -128,7 +128,7 @@ class HMM:
         transitions = self.transitions # N * N
         emissions = self.emissions # N * vocab_size
         num_states = self.num_states # N
-        print(sample) # 1* T
+        # print(sample) # 1* T
         T = len(sample)
         if T == 0:
             return -math.inf
@@ -143,7 +143,7 @@ class HMM:
         #     c[0] += alpha[0][i]
         alpha[0] = np.multiply(pi,  emissions[:, int(sample[0] - 1)].transpose())
         c[0] = alpha[0].sum()
-        print(alpha[0])
+        print(alpha)
         # print(np.multiply(pi,  emissions[:, int(sample[0] - 1)].transpose()).sum())
         # print(c[0])
         c[0] = 1.0 / c[0]
