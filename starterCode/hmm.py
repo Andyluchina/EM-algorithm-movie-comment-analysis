@@ -181,6 +181,7 @@ class HMM:
         #     for i in range(num_states):
         #         alpha[t][i] *= c[t]
         logProb = np.log10(c).sum()
+        print(c)
         # for i in range(T):
         #     logProb += math.log10(c[i])
         #     print(math.log10(c[i]))
@@ -253,14 +254,22 @@ class HMM:
             gamma1 = []
             gamma2 = []
 
-            for i in range(T):
-                beta.append([0] * self.num_states)
-                gamma1.append([0] * self.num_states)
-                gamma2.append(HMM.init_N_by_N_matrix(self.num_states))
+            beta = np.zeros((T, num_states))
+            gamma1 = np.zeros((T, num_states))
+            gamma2 = np.zeros((T, num_states, num_states))
+            beta[(T - 1), :] = c[T - 1]
+            # for i in range(T):
+            #     beta.append([0] * self.num_states)
+            #     gamma1.append([0] * self.num_states)
+            #     gamma2.append(HMM.init_N_by_N_matrix(self.num_states))
 
-            for i in range(num_states):
-                beta[T - 1][i] = c[T - 1]
-
+            # for i in range(num_states):
+            #     beta[T - 1][i] = c[T - 1]
+            # pi = self.pi # 1 * N
+            # transitions = self.transitions # N * N
+            # emissions = self.emissions # N * vocab_size
+            # num_states = self.num_states # N
+            # beta[t] = beta[t + 1]
             for t in range(T - 2, -1, -1):
                 for i in range(num_states):
                     for j in range(num_states):
