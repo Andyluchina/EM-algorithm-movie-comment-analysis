@@ -134,7 +134,7 @@ class HMM:
             return -math.inf
 
         c = np.zeros(T) #1*T
-        alpha = np.zeros((1,num_states))
+        alpha = np.zeros((T,num_states))
         print(c)
         print(alpha)
 
@@ -147,7 +147,7 @@ class HMM:
             alpha[0][i] = c[0] * alpha[0][i]
 
         for t in range(1, T):
-            alpha.append([0] * num_states)
+            # alpha.append([0] * num_states)
             for i in range(num_states):
                 for j in range(num_states):
                     alpha[t][i] += alpha[t - 1][j] * transitions[j][i]
