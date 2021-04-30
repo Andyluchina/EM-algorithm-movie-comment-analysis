@@ -162,7 +162,7 @@ class HMM:
         #         alpha[t][i] *= c[t]
 
         logProb = np.log10(c).sum()
-        print(logProb)
+        # print(logProb)
         # for i in range(T):
         #     logProb += math.log10(c[i])
         #     print(math.log10(c[i]))
