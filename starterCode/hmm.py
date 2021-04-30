@@ -355,7 +355,7 @@ def main():
     parser.add_argument('--test_path_neg',
                         default='/Users/zhanghaoqi/Desktop/csc246p3/csc246project3/imdbFor246/test/neg',
                         help='Path to the testing data directory.')
-    parser.add_argument('--max_iters', type=int, default=10,
+    parser.add_argument('--max_iters', type=int, default=30,
                         help='The maximum number of EM iterations.')
     parser.add_argument('--hidden_states', type=int, default=3,
                         help='The number of hidden states to use.')
