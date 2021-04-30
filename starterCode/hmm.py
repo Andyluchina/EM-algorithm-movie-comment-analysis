@@ -128,7 +128,7 @@ class HMM:
         transitions = self.transitions
         emissions = self.emissions
         num_states = self.num_states
-
+        print(sample)
         T = len(sample)
         if T == 0:
             return -math.inf
