@@ -155,13 +155,12 @@ class HMM:
         #     alpha[t] = alpha[t] * c[t]
 
         # print(c)
-        print(transitions)
+        # print(transitions)
         for t in range(1, T):
             for i in range(num_states):
-                print(alpha[t - 1])
                 for j in range(num_states):
                     alpha[t][i] += (alpha[t - 1][j] * transitions[j][i])
-                    print(transitions[j][i])
+                    # print(transitions[j][i])
                 alpha[t][i] *= emissions[i][int(sample[t] - 1)]
                 c[t] += alpha[t][i]
             # print("alpha1")
