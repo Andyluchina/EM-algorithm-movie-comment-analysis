@@ -77,7 +77,7 @@ class HMM:
 
         factor = 0.0  # normalization
 
-        pi = np.random.rand(1, num_states)  # 1 * N
+        pi = np.random.rand(num_states)  # 1 * N
         factor = pi.sum()
         pi = pi/factor
         print(pi)
