@@ -268,7 +268,7 @@ class HMM:
             # emissions = self.emissions # N * vocab_size
             # num_states = self.num_states # N
             for t in range(T - 2, -1, -1):
-                beta[t] = transitions.dot(np.multiply(beta[t + 1].transpose(), emissions[j][int(sample[t + 1] - 1)])).transpose()
+                beta[t] = transitions.dot(np.multiply(beta[t + 1].transpose(), emissions[:, [int(sample[t + 1] - 1)])).transpose()
                 beta[t] *= c[t]
             # for t in range(T - 2, -1, -1):
             #     for i in range(num_states):
