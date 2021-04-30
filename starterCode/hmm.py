@@ -133,8 +133,10 @@ class HMM:
         if T == 0:
             return -math.inf
 
-        c = [0.0] * T
+        c = [0.0] * T #1*T
         alpha = [[0] * num_states]
+        print(c)
+        print(alpha)
 
         for i in range(num_states):
             alpha[0][i] = pi[i] * emissions[i][int(sample[0] - 1)]
