@@ -143,6 +143,8 @@ class HMM:
             alpha[0][i] = pi[i] * emissions[i][int(sample[0] - 1)]
             c[0] += alpha[0][i]
         print(alpha[0])
+        print(np.multiply(pi,  emissions[:, int(sample[0] - 1)].transpose()).sum())
+        print(c[0])
         c[0] = 1.0 / c[0]
         for i in range(num_states):
             alpha[0][i] = c[0] * alpha[0][i]
