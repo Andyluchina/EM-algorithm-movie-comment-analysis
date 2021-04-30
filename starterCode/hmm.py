@@ -155,13 +155,10 @@ class HMM:
         #     c[0] += alpha[0][i]
         alpha[0] = np.multiply(pi,  emissions[:, int(sample[0] - 1)].transpose())
         c[0] = alpha[0].sum()
-        # print(alpha)
-
-
         c[0] = 1.0 / c[0]
         alpha[0] = alpha[0] * c[0]
-        for i in range(num_states):
-            alpha[0][i] = c[0] * alpha[0][i]
+        # for i in range(num_states):
+        #     alpha[0][i] = c[0] * alpha[0][i]
         for t in range(1, T):
             alpha[t] = alpha[t - 1].dot(transitions)
             alpha[t] = np.multiply(alpha[t],  emissions[:, int(sample[t] - 1)].transpose())
