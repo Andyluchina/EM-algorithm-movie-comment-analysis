@@ -126,6 +126,7 @@ class HMM:
 
         for i in range(data_size):
             sample_log = HMM.loglikelihood_helper(self, dataset[i])
+            # drop file
             if sample_log == -math.inf or sample_log == math.inf:
                 print("dropped_file")
                 dropped_file += 1.0
@@ -228,28 +229,24 @@ class HMM:
             # print()
 
             # E-STEP, FORWARD, ALPHA
-            c = [0.0] * T
+            c = np.zeros(T)
 
-            alpha = [[0] * num_states]
-            for i in range(num_states):
-                alpha[0][i] = pi[i] * emissions[i][int(sample[0] - 1)]
-                c[0] += alpha[0][i]
+            alpha = np.zeros((T,num_states))
 
+            alpha[0] = np.multiply(pi,  emissions[:, int(sample[0] - 1)].transpose())
+            c[0] = alpha[0].sum()
             c[0] = 1.0 / c[0]
+            alpha[0] = alpha[0] * c[0]
 
             for i in range(num_states):
                 alpha[0][i] = c[0] * alpha[0][i]
 
             for t in range(1, T):
-                alpha.append([0] * num_states)
-                for i in range(num_states):
-                    for j in range(num_states):
-                        alpha[t][i] += (alpha[t - 1][j] * transitions[j][i])
-                    alpha[t][i] *= emissions[i][int(sample[t] - 1)]
-                    c[t] += alpha[t][i]
+                alpha[t] = alpha[t - 1].dot(transitions)
+                alpha[t] = np.multiply(alpha[t],  emissions[:, int(sample[t] - 1)].transpose())
+                c[t] = alpha[t].sum()
                 c[t] = 1.0 / c[t]
-                for i in range(num_states):
-                    alpha[t][i] *= c[t]
+                alpha[t] = alpha[t] * c[t]
 
             # E-STEP, BACKWARD, BETA
             beta = []
