@@ -158,7 +158,7 @@ class HMM:
         for t in range(1, T):
             for i in range(num_states):
                 for j in range(num_states):
-                    alpha[t][i] += alpha[t - 1][j] * transitions[j][i]
+                    alpha[t][i] += (alpha[t - 1][j] * transitions[j][i])
                 print("alpha1")
                 print(alpha[t])
                 print("alpha2")
