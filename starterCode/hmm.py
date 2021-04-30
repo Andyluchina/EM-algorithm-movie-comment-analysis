@@ -82,15 +82,30 @@ class HMM:
         pi = pi/factor
 
 
-        transitions = np.random.rand(num_states, num_states)  # N * N
-        factor = transitions.sum()
-        transitions = transitions/factor
+        transitions = []  # N * N
+        for i in range(num_states):
+            transitions.append([])
+            factor = 0.0
+            for _ in range(num_states):
+                seed = 1.0 - random.uniform(0.0, 1.0)
+                factor += seed
+                transitions[i].append(seed)
+            for j in range(num_states):
+                transitions[i][j] /= factor
 
+        emissions = []  # N * vocab_size
+        for i in range(num_states):
+            emissions.append([])
+            factor = 0.0
+            for _ in range(vocab_size):
+                seed = 1.0 - random.uniform(0.0, 1.0)
+                factor += seed
+                emissions[i].append(seed)
+            for j in range(0, vocab_size):
+                emissions[i][j] /= factor
 
-        emissions = np.random.rand(num_states, vocab_size)  # N * vocab_size
-        factor = emissions.sum()
-        emissions = emissions/factor
-
+        transitions = np.asarray(transitions)
+        emissions = np.asarray(emissions)
 
         # initialize HMM
         self.pi = pi
@@ -154,8 +169,6 @@ class HMM:
             c[t] = 1.0 / c[t]
             alpha[t] = alpha[t] * c[t]
 
-        # print(c)
-        # print(transitions)
         # for t in range(1, T):
         #     for i in range(num_states):
         #         for j in range(num_states):
@@ -163,9 +176,6 @@ class HMM:
         #             # print(transitions[j][i])
         #         alpha[t][i] *= emissions[i][int(sample[t] - 1)]
         #         c[t] += alpha[t][i]
-        #     # print("alpha1")
-        #     # print(alpha[t])
-        #     # print("alpha2")
         #     # print(alpha[t - 1].dot(transitions))
         #     c[t] = 1.0 / c[t]
         #     for i in range(num_states):
