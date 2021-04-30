@@ -42,7 +42,8 @@ def testing_likelihood(sample, pi, transitions, emissions, num_states):
     for i in range(num_states):
         alpha[0][i] = pi[i] * emissions[i][int(sample[0] - 1)]
         c[0] += alpha[0][i]
-
+    if c[0] == 0:
+        return -math.inf
     c[0] = 1.0 / c[0]
     for i in range(num_states):
         alpha[0][i] = c[0] * alpha[0][i]
@@ -357,11 +358,11 @@ def main():
     parser.add_argument('--test_path_neg',
                         default='/Users/zhanghaoqi/Desktop/csc246p3/csc246project3/imdbFor246/test/neg',
                         help='Path to the testing data directory.')
-    parser.add_argument('--max_iters', type=int, default=30,
+    parser.add_argument('--max_iters', type=int, default=10,
                         help='The maximum number of EM iterations.')
-    parser.add_argument('--hidden_states', type=int, default=3,
+    parser.add_argument('--hidden_states', type=int, default=5,
                         help='The number of hidden states to use.')
-    parser.add_argument('--train_data_size', type=int, default=20,
+    parser.add_argument('--train_data_size', type=int, default=200,
                         help='Training data size.')
     parser.add_argument('--test_data_size', type=int, default=1000,
                         help='Testing data size.')
@@ -510,6 +511,8 @@ def main():
                                        new_pos_emissions, args.hidden_states)
         log_prob2 = testing_likelihood(sample, new_neg_pi, new_neg_transitions,
                                        new_neg_emissions, args.hidden_states)
+        if log_prob1 == log_prob2 or log_prob1 == -math.inf or log_prob2 == -math.inf:
+            continue
         total_sample += 1
         if log_prob1 < log_prob2:
             print("Negative Sample " + str(count) + "/" + str(test_neg_num) +
