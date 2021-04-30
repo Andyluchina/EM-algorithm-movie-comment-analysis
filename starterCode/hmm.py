@@ -124,21 +124,23 @@ class HMM:
 
     # return the loglikelihood for a single sequence (numpy matrix)
     def loglikelihood_helper(self, sample):
-        pi = self.pi
-        transitions = self.transitions
-        emissions = self.emissions
-        num_states = self.num_states
-        print(sample)
+        pi = self.pi # 1 * N
+        transitions = self.transitions # N * N
+        emissions = self.emissions # N * vocab_size
+        num_states = self.num_states # N
+        print(sample) # 1* T
         T = len(sample)
         if T == 0:
             return -math.inf
 
         c = np.zeros(T) #1*T
-        alpha = np.zeros((T,num_states))
-        print(c)
-        print(alpha)
-
+        alpha = np.zeros((T,num_states)) #T * N
+        # print(c)
+        # print(alpha)
+        # np. pi  emissions[:, int(sample[0] - 1)]
+        print(emissions[:, int(sample[0] - 1)])
         for i in range(num_states):
+            print(emissions[i][int(sample[0] - 1)])
             alpha[0][i] = pi[i] * emissions[i][int(sample[0] - 1)]
             c[0] += alpha[0][i]
 
