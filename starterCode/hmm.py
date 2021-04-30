@@ -239,8 +239,6 @@ class HMM:
             c[0] = 1.0 / c[0]
             alpha[0] = alpha[0] * c[0]
 
-            for i in range(num_states):
-                alpha[0][i] = c[0] * alpha[0][i]
 
             for t in range(1, T):
                 alpha[t] = alpha[t - 1].dot(transitions)
