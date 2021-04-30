@@ -85,14 +85,12 @@ class HMM:
         transitions = np.random.rand(num_states, num_states)  # N * N
         factor = transitions.sum()
         transitions = transitions/factor
-        print(transitions)
-        print(transitions.sum())
+
 
         emissions = np.random.rand(num_states, vocab_size)  # N * vocab_size
         factor = emissions.sum()
         emissions = emissions/factor
-        print(emissions)
-        print(emissions.sum())
+
 
         # initialize HMM
         self.pi = pi
@@ -354,6 +352,7 @@ def main():
     train_data2 = parse_data_with_existing_vocab(args.train_path_neg, train_vocab1)
     print("=======================================================================================")
 
+    print(train_vocab1)
     hmm1 = HMM(args.hidden_states, len(train_vocab1))
     hmm2 = HMM(args.hidden_states, len(train_vocab1))
 
