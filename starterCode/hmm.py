@@ -177,9 +177,7 @@ class HMM:
         #     c[t] = 1.0 / c[t]
         #     for i in range(num_states):
         #         alpha[t][i] *= c[t]
-
         logProb = np.log10(c).sum()
-        # print(logProb)
         # for i in range(T):
         #     logProb += math.log10(c[i])
         #     print(math.log10(c[i]))
