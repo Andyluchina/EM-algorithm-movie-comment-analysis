@@ -86,11 +86,13 @@ class HMM:
         factor = transitions.sum()
         transitions = transitions/factor
         print(transitions)
+        print(transitions.sum())
 
         emissions = np.random.rand(num_states, vocab_size)  # N * vocab_size
         factor = emissions.sum()
         emissions = emissions/factor
         print(emissions)
+        print(emissions.sum())
 
         # initialize HMM
         self.pi = pi
