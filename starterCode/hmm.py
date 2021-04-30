@@ -127,6 +127,7 @@ class HMM:
         for i in range(data_size):
             sample_log = HMM.loglikelihood_helper(self, dataset[i])
             if sample_log == -math.inf or sample_log == math.inf:
+                print("dropped_file")
                 dropped_file += 1.0
             else:
                 mean_log += sample_log
