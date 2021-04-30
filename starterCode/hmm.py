@@ -438,17 +438,17 @@ def main():
     # print(new_neg_emissions)
     # print()
 
-    plt.plot(x_pos, logProb_pos, marker='o', color='blue', linewidth=3)
-    plt.title('MEAN Log Likelihood for Training: POSITIVE', size=14)
-    plt.xlabel('Iterations before Converge', size=12)
-    plt.ylabel('Log Likelihood', size=12)
-    plt.show()
-
-    plt.plot(x_neg, logProb_neg, marker='o', color='blue', linewidth=3)
-    plt.title('MEAN Log Likelihood for Training: NEGATIVE', size=14)
-    plt.xlabel('Iterations before Converge', size=12)
-    plt.ylabel('Log Likelihood', size=12)
-    plt.show()
+    # plt.plot(x_pos, logProb_pos, marker='o', color='blue', linewidth=3)
+    # plt.title('MEAN Log Likelihood for Training: POSITIVE', size=14)
+    # plt.xlabel('Iterations before Converge', size=12)
+    # plt.ylabel('Log Likelihood', size=12)
+    # plt.show()
+    #
+    # plt.plot(x_neg, logProb_neg, marker='o', color='blue', linewidth=3)
+    # plt.title('MEAN Log Likelihood for Training: NEGATIVE', size=14)
+    # plt.xlabel('Iterations before Converge', size=12)
+    # plt.ylabel('Log Likelihood', size=12)
+    # plt.show()
 
     print("=======================================================================================")
     print()
