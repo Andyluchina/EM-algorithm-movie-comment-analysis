@@ -151,6 +151,8 @@ class HMM:
             alpha[t] = np.multiply(alpha[t],  emissions[:, int(sample[t] - 1)].transpose())
             c[t] = alpha[t].sum()
             alpha[t] = alpha[t] / c[t]
+
+        c = 1 / c
         # for t in range(1, T):
         #     for i in range(num_states):
         #         for j in range(num_states):
@@ -166,7 +168,7 @@ class HMM:
         # for i in range(T):
         #     logProb += math.log10(c[i])
         #     print(math.log10(c[i]))
-        # logProb = -logProb
+        logProb = -logProb
 
         return logProb
 
