@@ -270,10 +270,13 @@ class HMM:
                             numer += gamma1[t][i]
                     emissions[i][j] = numer / denom
 
-            if np.isnan(c) or np.isnan(alpha) or np.isnan(beta) or np.isnan(gamma1) or np.isnan(gamma2) \
-                    or np.isnan(pi) or np.isnan(transitions) or np.isnan(emissions):
-                print("NaN!!!!!")
-                continue
+            print(gamma1)
+            print(gamma2)
+
+            # if np.isnan(c) or np.isnan(alpha) or np.isnan(beta) or np.isnan(gamma1) or np.isnan(gamma2) \
+            #         or np.isnan(pi) or np.isnan(transitions) or np.isnan(emissions):
+            #     print("NaN!!!!!")
+            #     continue
 
             # factor = 0.0
             #
