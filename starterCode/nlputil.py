@@ -39,57 +39,66 @@ import sys
 # which the paths are presented to the method.  Renaming the files may also change the order.
 #
 # paths -- a list of paths to directories containing data.  paths represented as strings)
-def build_vocab_words(paths):
-    vocab = {}
-    nextValue = 1
-    for path in paths:
-        for filename in os.listdir(path):
-            with open(os.path.join(path, filename)) as fh:
-                sequence = fh.read()
-                for token in sequence.split():
-                    if token not in vocab:
-                        vocab[token] = nextValue
-                        nextValue += 1
-    return vocab
+# def build_vocab_words(paths):
+#     vocab = {}
+#     nextValue = 1
+#     for path in paths:
+#         for filename in os.listdir(path):
+#             with open(os.path.join(path, filename)) as fh:
+#                 sequence = fh.read()
+#                 for token in sequence.split():
+#                     if token not in vocab:
+#                         vocab[token] = nextValue
+#                         nextValue += 1
+#     return vocab
 
 
 # Same as above, but for character models.
-def build_vocab_chars(paths):
+def build_vocab_chars(paths, num):
     vocab = {}
     nextValue = 1
+    count = 0
     for path in paths:
         for filename in os.listdir(path):
             with open(os.path.join(path, filename)) as fh:
                 sequence = fh.read()
+                count += 1
                 for character in sequence:
                     if character not in vocab:
                         vocab[character] = nextValue
                         nextValue += 1
+                if count >= num:
+                    return vocab
     return vocab
 
-def build_vocab_chars_with_existing_vocab(paths, vocab):
+
+def build_vocab_chars_with_existing_vocab(paths, vocab, num):
     # vocab = {}
     nextValue = len(vocab) + 1
+    count = 0
     for path in paths:
         for filename in os.listdir(path):
             with open(os.path.join(path, filename)) as fh:
                 sequence = fh.read()
+                count += 1
                 for character in sequence:
                     if character not in vocab:
                         vocab[character] = nextValue
                         nextValue += 1
+                if count >= num:
+                    return vocab
     return vocab
 
 
 # Sample is a plain string - not a list -- UNK token has value zero.
 # Convert the sample to a integer representation, which is an Nx1 array of ints,
 # where N is the number of tokens in the sequence.
-def convert_words_to_ints(sample, vocab):
-    sequence = sample.split()
-    answer = np.zeros(len(sequence), dtype=np.uint)
-    for n, token in enumerate(sequence):
-        answer[n] = vocab.get(token, 0)
-    return answer
+# def convert_words_to_ints(sample, vocab):
+#     sequence = sample.split()
+#     answer = np.zeros(len(sequence), dtype=np.uint)
+#     for n, token in enumerate(sequence):
+#         answer[n] = vocab.get(token, 0)
+#     return answer
 
 
 # Same as above, but for characters.
@@ -106,111 +115,100 @@ def convert_chars_to_ints(sample, vocab):
 # Convert the sample to a one-hot representation, which is an NxV matrix,
 # where N is the number of tokens in the sequence and V is the vocabulary
 # size observed on the training data.
-def convert_words_to_onehot(sample, vocab):
-    sequence = sample.split()
-    onehot = np.zeros((len(sequence), len(vocab)+1), dtype=np.uint)
-    for n, token in enumerate(sequence):
-        onehot[n, vocab.get(token, 0)] = 1
-    return onehot
-
-
-# Same as above, but for characters.
-def convert_chars_to_onehot(sample, vocab):
-    onehot = np.zeros((len(sample), len(vocab)+1), dtype=np.uint)
-    for n, token in enumerate(sample):
-        onehot[n, vocab.get(token, 0)] = 1
-    return onehot
+# def convert_words_to_onehot(sample, vocab):
+#     sequence = sample.split()
+#     onehot = np.zeros((len(sequence), len(vocab)+1), dtype=np.uint)
+#     for n, token in enumerate(sequence):
+#         onehot[n, vocab.get(token, 0)] = 1
+#     return onehot
+#
+#
+# # Same as above, but for characters.
+# def convert_chars_to_onehot(sample, vocab):
+#     onehot = np.zeros((len(sample), len(vocab)+1), dtype=np.uint)
+#     for n, token in enumerate(sample):
+#         onehot[n, vocab.get(token, 0)] = 1
+#     return onehot
 
 
 # Read every file located at given path, convert to one-hot OR integer representation,
 # and collect the results into a python list.
-def load_and_convert_data_words_to_onehot(paths, vocab):
-    data = []
-    for path in paths:
-        for filename in os.listdir(path):
-            with open(os.path.join(path, filename)) as fh:
-                data.append(convert_words_to_onehot(fh.read(), vocab))
-    return data
+# def load_and_convert_data_words_to_onehot(paths, vocab):
+#     data = []
+#     for path in paths:
+#         for filename in os.listdir(path):
+#             with open(os.path.join(path, filename)) as fh:
+#                 data.append(convert_words_to_onehot(fh.read(), vocab))
+#     return data
 
 
 # Same as above, but uses a character model
-def load_and_convert_data_chars_to_onehot(paths, vocab):
-    data = []
-    for path in paths:
-        for filename in os.listdir(path):
-            with open(os.path.join(path, filename)) as fh:
-                data.append(convert_chars_to_onehot(fh.read(), vocab))
-    return data
+# def load_and_convert_data_chars_to_onehot(paths, vocab):
+#     data = []
+#     for path in paths:
+#         for filename in os.listdir(path):
+#             with open(os.path.join(path, filename)) as fh:
+#                 data.append(convert_chars_to_onehot(fh.read(), vocab))
+#     return data
 
 
-def load_and_convert_data_words_to_ints(paths, vocab):
-    data = []
-    for path in paths:
-        for filename in os.listdir(path):
-            with open(os.path.join(path, filename)) as fh:
-                data.append(convert_words_to_ints(fh.read(), vocab))
-    return data
+# def load_and_convert_data_words_to_ints(paths, vocab):
+#     data = []
+#     for path in paths:
+#         for filename in os.listdir(path):
+#             with open(os.path.join(path, filename)) as fh:
+#                 data.append(convert_words_to_ints(fh.read(), vocab))
+#     return data
 
 
 # Same as above, but uses a character model
-def load_and_convert_data_chars_to_ints(paths, vocab):
+def load_and_convert_data_chars_to_ints(paths, vocab, num):
     data = []
+    count = 0
     for path in paths:
         for filename in os.listdir(path):
             with open(os.path.join(path, filename)) as fh:
+                count += 1
                 data.append(convert_chars_to_ints(fh.read(), vocab))
+                if count >= num:
+                    return data
     return data
 
 
-def parse_data(this_path):
-
+def parse_data(this_path, num):
     print("NLP Util smoketest.")
-
-    # CHANGE HERE !!!!!!!!!!!!!!!
     paths = [this_path]
-    # CHANGE HERE !!!!!!!!!!!!!!!
-
     print("Begin loading vocab... ", end='')
     sys.stdout.flush()
     begin = time()
-    # CHARACTER-BASED MODEL !!!!!!!!!!!!!!
-    train_vocab = build_vocab_chars(paths)
+    train_vocab = build_vocab_chars(paths, num)
     end = time()
     print('Done in', end - begin, 'seconds.  Found', len(train_vocab), 'unique tokens.')
     print('Begin loading all data and converting to ints... ', end='')
     sys.stdout.flush()
     begin = time()
-    # CHAR TO INTEGER !!!!!!!!!!!!!!!!!
-    train_data = load_and_convert_data_chars_to_ints(paths, train_vocab)
+    train_data = load_and_convert_data_chars_to_ints(paths, train_vocab, num)
     end = time()
     print('done in', end-begin, 'seconds.')
-
     return train_data, train_vocab
 
-def parse_data_with_existing_vocab(this_path, vocab):
 
+def parse_data_with_existing_vocab(this_path, vocab, num):
     print("NLP Util smoketest.")
-
-    # CHANGE HERE !!!!!!!!!!!!!!!
     paths = [this_path]
-    # CHANGE HERE !!!!!!!!!!!!!!!
-
     print("Begin loading vocab... ", end='')
     sys.stdout.flush()
     begin = time()
-    # CHARACTER-BASED MODEL !!!!!!!!!!!!!!
-    train_vocab = build_vocab_chars_with_existing_vocab(paths, vocab)
+    train_vocab = build_vocab_chars_with_existing_vocab(paths, vocab, num)
     end = time()
     print('Done in', end - begin, 'seconds.  Found', len(train_vocab), 'unique tokens.')
     print('Begin loading all data and converting to ints... ', end='')
     sys.stdout.flush()
     begin = time()
-    # CHAR TO INTEGER !!!!!!!!!!!!!!!!!
-    train_data = load_and_convert_data_chars_to_ints(paths, train_vocab)
+    train_data = load_and_convert_data_chars_to_ints(paths, train_vocab, num)
     end = time()
     print('done in', end-begin, 'seconds.')
-
-    return train_data
+    return train_data, train_vocab
 
     # print(len(data))
     # print("Data[0] = ", data[0])
