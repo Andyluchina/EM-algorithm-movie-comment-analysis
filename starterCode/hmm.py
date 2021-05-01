@@ -31,57 +31,15 @@ from time import time
 # Note: You may want to add fields for expectations.
 
 
-def testing_likelihood(sample, pi, transitions, emissions, num_states):
-    T = len(sample)
-    if T == 0:
-        return -math.inf
-
-    c = [0.0] * T
-
-    alpha = [[0] * num_states]
-    for i in range(num_states):
-        alpha[0][i] = pi[i] * emissions[i][int(sample[0] - 1)]
-        c[0] += alpha[0][i]
-    if c[0] == 0:
-        return -math.inf
-    c[0] = 1.0 / c[0]
-    for i in range(num_states):
-        alpha[0][i] = c[0] * alpha[0][i]
-
-    for t in range(1, T):
-        alpha.append([0] * num_states)
-        for i in range(num_states):
-            for j in range(num_states):
-                alpha[t][i] += alpha[t - 1][j] * transitions[j][i]
-            alpha[t][i] *= emissions[i][int(sample[t] - 1)]
-            c[t] += alpha[t][i]
-        c[t] = 1.0 / c[t]
-        for i in range(num_states):
-            alpha[t][i] *= c[t]
-
-    logProb = 0.0
-    # print(c)
-    for i in range(T):
-        logProb += math.log10(c[i])
-    logProb = -logProb
-    return logProb
-
-
 class HMM:
     __slots__ = ('pi', 'transitions', 'emissions', 'num_states', 'vocab_size')
-
-    def init_N_by_N_matrix(N):  # N = number of hidden states
-        return np.zeros((N,N))
 
     # The constructor should initalize all the model parameters.
     def __init__(self, num_states, vocab_size):
 
-        factor = 0.0  # normalization
-
         pi = np.random.rand(num_states)  # 1 * N
         factor = pi.sum()
-        pi = pi/factor
-
+        pi = pi / factor
 
         transitions = []  # N * N
         for i in range(num_states):
@@ -127,7 +85,7 @@ class HMM:
         for i in range(data_size):
             sample_log = HMM.loglikelihood_helper(self, dataset[i])
             # drop file
-            if sample_log == -math.inf or sample_log == math.inf:
+            if sample_log == -math.inf:
                 print("dropped_file")
                 dropped_file += 1.0
             else:
@@ -142,33 +100,34 @@ class HMM:
 
     # return the loglikelihood for a single sequence (numpy matrix)
     def loglikelihood_helper(self, sample):
-        pi = self.pi # 1 * N
-        transitions = self.transitions # N * N
-        emissions = self.emissions # N * vocab_size
-        num_states = self.num_states # N
-        # print(sample) # 1* T
+        pi = self.pi  # 1 * N
+        transitions = self.transitions  # N * N
+        emissions = self.emissions  # N * vocab_size
+        num_states = self.num_states  # N
+
         T = len(sample)
         if T == 0:
             return -math.inf
 
-        c = np.zeros(T) #1*T
-        alpha = np.zeros((T,num_states)) #T * N
+        c = np.zeros(T)  # 1 * T
+        alpha = np.zeros((T, num_states))  # T * N
         # for i in range(num_states):
         #     alpha[0][i] = pi[i] * emissions[i][int(sample[0] - 1)]
         #     c[0] += alpha[0][i]
+
         alpha[0] = np.multiply(pi,  emissions[:, int(sample[0] - 1)].transpose())
         c[0] = alpha[0].sum()
         c[0] = 1.0 / c[0]
         alpha[0] = alpha[0] * c[0]
         # for i in range(num_states):
         #     alpha[0][i] = c[0] * alpha[0][i]
+
         for t in range(1, T):
             alpha[t] = alpha[t - 1].dot(transitions)
             alpha[t] = np.multiply(alpha[t],  emissions[:, int(sample[t] - 1)].transpose())
             c[t] = alpha[t].sum()
             c[t] = 1.0 / c[t]
             alpha[t] = alpha[t] * c[t]
-
         # for t in range(1, T):
         #     for i in range(num_states):
         #         for j in range(num_states):
@@ -180,12 +139,12 @@ class HMM:
         #     c[t] = 1.0 / c[t]
         #     for i in range(num_states):
         #         alpha[t][i] *= c[t]
+
         logProb = np.log10(c).sum()
-        # print(c)
+        logProb = -logProb
         # for i in range(T):
         #     logProb += math.log10(c[i])
         #     print(math.log10(c[i]))
-        logProb = -logProb
 
         return logProb
 
@@ -232,13 +191,12 @@ class HMM:
             # E-STEP, FORWARD, ALPHA
             c = np.zeros(T)
 
-            alpha = np.zeros((T,num_states))
+            alpha = np.zeros((T, num_states))
 
             alpha[0] = np.multiply(pi,  emissions[:, int(sample[0] - 1)].transpose())
             c[0] = alpha[0].sum()
             c[0] = 1.0 / c[0]
             alpha[0] = alpha[0] * c[0]
-
 
             for t in range(1, T):
                 alpha[t] = alpha[t - 1].dot(transitions)
@@ -248,9 +206,6 @@ class HMM:
                 alpha[t] = alpha[t] * c[t]
 
             # E-STEP, BACKWARD, BETA
-            beta = []
-            gamma1 = []
-            gamma2 = []
 
             beta = np.zeros((T, num_states))
             gamma1 = np.zeros((T, num_states))
@@ -260,15 +215,16 @@ class HMM:
             #     beta.append([0] * self.num_states)
             #     gamma1.append([0] * self.num_states)
             #     gamma2.append(HMM.init_N_by_N_matrix(self.num_states))
-
             # for i in range(num_states):
             #     beta[T - 1][i] = c[T - 1]
             # pi = self.pi # 1 * N
             # transitions = self.transitions # N * N
             # emissions = self.emissions # N * vocab_size
             # num_states = self.num_states # N
+
             for t in range(T - 2, -1, -1):
-                beta[t] = transitions.dot(np.multiply(beta[t + 1].transpose(), emissions[:, int(sample[t + 1] - 1)])).transpose()
+                beta[t] = transitions.dot(np.multiply(beta[t + 1].transpose(),
+                                                      emissions[:, int(sample[t + 1] - 1)])).transpose()
                 beta[t] *= c[t]
             # for t in range(T - 2, -1, -1):
             #     for i in range(num_states):
@@ -277,8 +233,9 @@ class HMM:
             #         beta[t][i] *= c[t]
             # alpha T * N
             # E-STEP, VITERBI, GAMMA
+
             for t in range(T - 1):
-                gamma2[t] = np.multiply(transitions, alpha[t].transpose().dot(np.multiply(beta[t + 1], emissions[:,int(sample[t + 1] - 1)].transpose())))
+                gamma2[t] = np.multiply(transitions, alpha[t].transpose().dot(np.multiply(beta[t + 1], emissions[:, int(sample[t + 1] - 1)].transpose())))
                 gamma1[t] = np.sum(gamma2[t], axis=0)
             # for t in range(T - 1):
             #     for i in range(num_states):
@@ -286,11 +243,13 @@ class HMM:
             #             gamma2[t][i][j] = alpha[t][i] * transitions[i][j] * \
             #                                   emissions[j][int(sample[t + 1] - 1)] * beta[t + 1][j]
             #             gamma1[t][i] += gamma2[t][i][j]
+
             gamma1[T - 1] = np.copy(alpha[T - 1])
             # for i in range(num_states):
             #     gamma1[T - 1][i] = alpha[T - 1][i]
 
             # M-STEP, PARAMETER RE-ESTIMATION
+
             pi = np.copy(gamma1[0])
             # for i in range(num_states):
             #     pi[i] = gamma1[0][i]
@@ -316,7 +275,6 @@ class HMM:
                             numer += gamma1[t][i]
                     emissions[i][j] = numer / denom
 
-
             pi = pi / pi.sum()
             # factor = 0.0
             #
@@ -324,22 +282,34 @@ class HMM:
             #     factor += pi[i]
             # for i in range(num_states):
             #     pi[i] /= factor
+
             sum_of_factors = transitions.sum(axis=1)
-            transitions = transitions / sum_of_factors[:,None]
+            transitions = transitions / sum_of_factors[:, None]
             # for i in range(num_states):
             #     factor = 0.0
             #     for j in range(num_states):
             #         factor += transitions[i][j]
             #     for j in range(num_states):
             #         transitions[i][j] /= factor
+
             sum_of_factors = emissions.sum(axis=1)
-            emissions = emissions / sum_of_factors[:,None]
+            emissions = emissions / sum_of_factors[:, None]
             # for i in range(num_states):
             #     factor = 0.0
             #     for j in range(len(emissions[i])):
             #         factor += emissions[i][j]
             #     for j in range(len(emissions[i])):
             #         emissions[i][j] /= factor
+
+            if math.isnan(pi[0]):
+                print("pi is nan")
+                exit()
+            if math.isnan(transitions[0][0]):
+                print("transitions is nan")
+                exit()
+            if math.isnan(emissions[0][0]):
+                print("emissions is nan")
+                exit()
 
             self.pi = pi
             self.transitions = transitions
@@ -355,8 +325,8 @@ class HMM:
         return True, logProb
 
     # Return a "completed" sample by adding additional steps based on model probability.
-    def complete_sequence(self, sample, steps):
-        pass
+    # def complete_sequence(self, sample, steps):
+    #     pass
 
 
 def main():
@@ -373,13 +343,13 @@ def main():
     parser.add_argument('--test_path_neg',
                         default='/Users/zhanghaoqi/Desktop/csc246p3/csc246project3/imdbFor246/test/neg',
                         help='Path to the testing data directory.')
-    parser.add_argument('--max_iters', type=int, default=10,
+    parser.add_argument('--max_iters', type=int, default=50,
                         help='The maximum number of EM iterations.')
-    parser.add_argument('--hidden_states', type=int, default=5,
+    parser.add_argument('--hidden_states', type=int, default=3,
                         help='The number of hidden states to use.')
     parser.add_argument('--train_data_size', type=int, default=200,
                         help='Training data size.')
-    parser.add_argument('--test_data_size', type=int, default=1000,
+    parser.add_argument('--test_data_size', type=int, default=2000,
                         help='Testing data size.')
 
     args = parser.parse_args()
@@ -403,15 +373,15 @@ def main():
     new_neg_emissions = hmm2.emissions
 
     logProb = hmm1.loglikelihood(train_data1, args.train_data_size)
-    logProb_pos = [round(logProb, 2)]  # Drawing, y-axis
-    x_pos = [int(0)]  # Drawing, x-axis
+    # logProb_pos = [round(logProb, 2)]  # Drawing, y-axis
+    # x_pos = [int(0)]  # Drawing, x-axis
 
     converge = False
     for i in range(1, args.max_iters + 1):
         print("POSITIVE EM algorithm working ... Iteration(s) #" + str(i) + " ...")
         converge, logProb = hmm1.em_step(train_data1, logProb, args.train_data_size)
-        logProb_pos.append(round(logProb, 2))  # Drawing, y-axis
-        x_pos.append(i)  # Drawing, x-axis
+        # logProb_pos.append(round(logProb, 2))  # Drawing, y-axis
+        # x_pos.append(i)  # Drawing, x-axis
         if converge is True:
             print("Congratulations. EM algorithm converges after " + str(i) + " iteration(s).")
             break
@@ -425,14 +395,14 @@ def main():
     print("=======================================================================================")
 
     logProb = hmm2.loglikelihood(train_data2, args.train_data_size)
-    logProb_neg = [round(logProb, 2)]
-    x_neg = [int(0)]
+    # logProb_neg = [round(logProb, 2)]
+    # x_neg = [int(0)]
     converge = False
     for i in range(1, args.max_iters + 1):
         print("NEGATIVE EM algorithm working ... Iteration(s) #" + str(i) + " ...")
         converge, logProb = hmm2.em_step(train_data2, logProb, args.train_data_size)
-        logProb_neg.append(round(logProb, 2))
-        x_neg.append(i)
+        # logProb_neg.append(round(logProb, 2))
+        # x_neg.append(i)
         if converge is True:
             print("Congratulations. EM algorithm converges after " + str(i) + " iteration(s).")
             break
@@ -443,19 +413,13 @@ def main():
     if converge is False:
         print("NEGATIVE EM algorithm is not converging.")
 
-    # print()
-    # print(new_pos_pi)
-    # print()
-    # print(new_pos_transitions)
-    # print()
-    # print(new_pos_emissions)
-    # print()
-    # print(new_neg_pi)
-    # print()
-    # print(new_neg_transitions)
-    # print()
-    # print(new_neg_emissions)
-    # print()
+    hmm1.pi = new_pos_pi
+    hmm1.transitions = new_pos_transitions
+    hmm1.emissions = new_pos_emissions
+
+    hmm2.pi = new_neg_pi
+    hmm2.transitions = new_neg_transitions
+    hmm2.emissions = new_neg_emissions
 
     # plt.plot(x_pos, logProb_pos, marker='o', color='blue', linewidth=3)
     # plt.title('MEAN Log Likelihood for Training: POSITIVE', size=14)
@@ -493,7 +457,6 @@ def main():
 
     accurate_sample = 0
     total_sample = 0
-
     count = 0
 
     test_pos_num = len(test_pos)
@@ -503,17 +466,30 @@ def main():
         count += 1
         if count > args.test_data_size:
             break
-        log_prob1 = testing_likelihood(sample, new_pos_pi, new_pos_transitions,
-                                       new_pos_emissions, args.hidden_states)
-        log_prob2 = testing_likelihood(sample, new_neg_pi, new_neg_transitions,
-                                       new_neg_emissions, args.hidden_states)
+        log_prob1 = hmm1.loglikelihood_helper(sample)
+        log_prob2 = hmm2.loglikelihood_helper(sample)
+
+        if log_prob1 == -math.inf:
+            print("log_prob1 goes to negative infinity")
+            continue
+        if log_prob2 == -math.inf:
+            print("log_prob2 goes to negative infinity")
+            continue
+        if math.isnan(log_prob1):
+            print("log_prob1 is nan")
+            continue
+        if math.isnan(log_prob2):
+            print("log_prob2 is nan")
+            continue
+
         total_sample += 1
         if log_prob1 > log_prob2:
-            print("Positive Sample " + str(count) + "/" + str(test_neg_num) +
+            print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
                   " CORRECT:  " + str(log_prob1) + " > " + str(log_prob2) + ".")
             accurate_sample += 1
         else:
-            print("Positive Sample " + str(count) + "/" + str(test_pos_num) + " WRONG!")
+            print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
+                  " WRONG:  " + str(log_prob1) + " <= " + str(log_prob2) + "!!!!!!!!!!")
 
     print()
     count = 0
@@ -522,24 +498,47 @@ def main():
         count += 1
         if count > args.test_data_size:
             break
-        log_prob1 = testing_likelihood(sample, new_pos_pi, new_pos_transitions,
-                                       new_pos_emissions, args.hidden_states)
-        log_prob2 = testing_likelihood(sample, new_neg_pi, new_neg_transitions,
-                                       new_neg_emissions, args.hidden_states)
-        if log_prob1 == log_prob2 or log_prob1 == -math.inf or log_prob2 == -math.inf:
+        log_prob1 = hmm1.loglikelihood_helper(sample)
+        log_prob2 = hmm2.loglikelihood_helper(sample)
+
+        if log_prob1 == -math.inf:
+            print("log_prob1 goes to negative infinity")
             continue
+        if log_prob2 == -math.inf:
+            print("log_prob2 goes to negative infinity")
+            continue
+        if math.isnan(log_prob1):
+            print("log_prob1 is nan")
+            continue
+        if math.isnan(log_prob2):
+            print("log_prob2 is nan")
+            continue
+
         total_sample += 1
         if log_prob1 < log_prob2:
             print("Negative Sample " + str(count) + "/" + str(test_neg_num) +
                   " CORRECT:  " + str(log_prob1) + " < " + str(log_prob2) + ".")
             accurate_sample += 1
         else:
-            print("Negative Sample " + str(count) + "/" + str(test_neg_num) + " WRONG!")
+            print("Negative Sample " + str(count) + "/" + str(test_neg_num) +
+                  " WRONG:  " + str(log_prob1) + " >= " + str(log_prob2) + "!!!!!!!!!!")
 
     print()
     print("Total Accurate Sample: " + str(int(accurate_sample)))
     print("Total Tested Sample: " + str(int(total_sample)))
     print("Total Accuracy: " + str(accurate_sample / total_sample))
+    print()
+    print(new_pos_pi)
+    print()
+    print(new_pos_transitions)
+    print()
+    print(new_pos_emissions)
+    print()
+    print(new_neg_pi)
+    print()
+    print(new_neg_transitions)
+    print()
+    print(new_neg_emissions)
     print()
     print("Program Finishes.")
 
