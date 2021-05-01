@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
-
+import pickle
 from nlputil import *
 from time import time
 
@@ -74,6 +74,13 @@ class HMM:
         self.num_states = num_states
         self.vocab_size = vocab_size
 
+    def save(self,filename):
+        with open(filename, 'wb') as fh:
+            pickle.dump(self, fh)
+
+    def load_hmm(filename):
+        with open(filename, 'rb') as fh:
+            return pickle.load(fh)
     # return the loglikelihood for a complete dataset (train OR test) (list of matrices)
     def loglikelihood(self, dataset):
 
@@ -446,6 +453,9 @@ def main():
     hmm2.transitions = new_neg_transitions
     hmm2.emissions = new_neg_emissions
 
+    # save two models
+    hmm1.save("PositiveHMM")
+    hmm2.save("NegativeHMM")
     # scaling_factor = hmm1_logProb / hmm2_logProb
 
     # plt.plot(x_pos, logProb_pos, marker='o', color='blue', linewidth=3)
