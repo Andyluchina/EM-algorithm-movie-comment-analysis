@@ -276,18 +276,25 @@ class HMM:
                 transitions[i][j] = numer / denom
 
         print("Mid Re-estimation...")
-        for i in range(num_states):
-            denom = 0.0
-            for t in range(T):
-                denom += gamma1[t][i]
-            for j in range(self.vocab_size):
-                numer = 0.0
-                for t in range(T):
-                    if big_file[t] - 1 == j:
-                        numer += gamma1[t][i]
-                emissions[i][j] = numer / denom
+        # for i in range(num_states):
+        #     denom = 0.0
+        #     for t in range(T):
+        #         denom += gamma1[t][i]
+        #     for j in range(self.vocab_size):
+        #         numer = 0.0
+        #         for t in range(T):
+        #             if big_file[t] - 1 == j:
+        #                 numer += gamma1[t][i]
+        #         emissions[i][j] = numer / denom
 
-        # print(gamma1)
+        denom = gamma1.sum(axis=0) #1*N
+        numer = np.zeros((num_states, self.vocab_size))
+        for t in range(T):
+            numer[:,big_file[t] - 1] += gamma1[t].transpose()
+        emissions = numer / denom[:, None]
+
+
+        # print(gamma1) #T*N
         # print(gamma2)
 
         # if np.isnan(c) or np.isnan(alpha) or np.isnan(beta) or np.isnan(gamma1) or np.isnan(gamma2) \
