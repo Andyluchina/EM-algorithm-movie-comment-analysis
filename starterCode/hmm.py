@@ -268,28 +268,32 @@ class HMM:
             # emissions = self.emissions # N * vocab_size
             # num_states = self.num_states # N
             for t in range(T - 2, -1, -1):
-                beta[t] = transitions.dot(np.multiply(beta[t + 1].transpose(), emissions[:, [int(sample[t + 1] - 1)])).transpose()
+                beta[t] = transitions.dot(np.multiply(beta[t + 1].transpose(), emissions[:, int(sample[t + 1] - 1)])).transpose()
                 beta[t] *= c[t]
             # for t in range(T - 2, -1, -1):
             #     for i in range(num_states):
             #         for j in range(num_states):
             #             beta[t][i] += (transitions[i][j] * emissions[j][int(sample[t + 1] - 1)] * beta[t + 1][j])
             #         beta[t][i] *= c[t]
-
+            # alpha T * N
             # E-STEP, VITERBI, GAMMA
             for t in range(T - 1):
-                for i in range(num_states):
-                    for j in range(num_states):
-                        gamma2[t][i][j] = alpha[t][i] * transitions[i][j] * \
-                                          emissions[j][int(sample[t + 1] - 1)] * beta[t + 1][j]
-                        gamma1[t][i] += gamma2[t][i][j]
-
-            for i in range(num_states):
-                gamma1[T - 1][i] = alpha[T - 1][i]
+                gamma2[t] = np.multiply(transitions, alpha[t].transpose().dot(np.multiply(beta[t + 1], emissions[:,int(sample[t + 1] - 1)].transpose())))
+                gamma1[t] = np.sum(gamma2[t], axis=0)
+            # for t in range(T - 1):
+            #     for i in range(num_states):
+            #         for j in range(num_states):
+            #             gamma2[t][i][j] = alpha[t][i] * transitions[i][j] * \
+            #                                   emissions[j][int(sample[t + 1] - 1)] * beta[t + 1][j]
+            #             gamma1[t][i] += gamma2[t][i][j]
+            gamma1[T - 1] = np.copy(alpha[T - 1])
+            # for i in range(num_states):
+            #     gamma1[T - 1][i] = alpha[T - 1][i]
 
             # M-STEP, PARAMETER RE-ESTIMATION
-            for i in range(num_states):
-                pi[i] = gamma1[0][i]
+            pi = np.copy(gamma1[0])
+            # for i in range(num_states):
+            #     pi[i] = gamma1[0][i]
 
             for i in range(num_states):
                 denom = 0
@@ -312,26 +316,30 @@ class HMM:
                             numer += gamma1[t][i]
                     emissions[i][j] = numer / denom
 
-            factor = 0.0
 
-            for i in range(num_states):
-                factor += pi[i]
-            for i in range(num_states):
-                pi[i] /= factor
-
-            for i in range(num_states):
-                factor = 0.0
-                for j in range(num_states):
-                    factor += transitions[i][j]
-                for j in range(num_states):
-                    transitions[i][j] /= factor
-
-            for i in range(num_states):
-                factor = 0.0
-                for j in range(len(emissions[i])):
-                    factor += emissions[i][j]
-                for j in range(len(emissions[i])):
-                    emissions[i][j] /= factor
+            pi = pi / pi.sum()
+            # factor = 0.0
+            #
+            # for i in range(num_states):
+            #     factor += pi[i]
+            # for i in range(num_states):
+            #     pi[i] /= factor
+            sum_of_factors = transitions.sum(axis=1)
+            transitions = transitions / sum_of_factors[:,None]
+            # for i in range(num_states):
+            #     factor = 0.0
+            #     for j in range(num_states):
+            #         factor += transitions[i][j]
+            #     for j in range(num_states):
+            #         transitions[i][j] /= factor
+            sum_of_factors = emissions.sum(axis=1)
+            emissions = emissions / sum_of_factors[:,None]
+            # for i in range(num_states):
+            #     factor = 0.0
+            #     for j in range(len(emissions[i])):
+            #         factor += emissions[i][j]
+            #     for j in range(len(emissions[i])):
+            #         emissions[i][j] /= factor
 
             self.pi = pi
             self.transitions = transitions
