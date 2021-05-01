@@ -153,174 +153,186 @@ class HMM:
 
         count = 0
         begin = time()
-        num_sample = len(dataset)
+
+        big_file = []
 
         for sample in dataset:
+            for number in sample:
+                big_file.append(number)
+                ##### File Connection Problem
 
-            T = len(sample)
-            if T == 0:
-                continue
+        T = len(big_file)
 
-            char_set = set()
-            for num in sample:
-                char_set.add(int(num - 1))
+        # T = len(sample)
+        # if T == 0:
+        #     continue
 
-            count += 1
-            print("EM sample " + str(count) + "/" + str(num_sample))
+        # char_set = set()
+        # for num in sample:
+        #     char_set.add(int(num - 1))
 
-            pi = self.pi
-            transitions = self.transitions
-            emissions = self.emissions
-            num_states = self.num_states
+        # count += 1
+        # print("EM sample " + str(count) + "/" + str(num_sample))
 
-            # print()
-            # print("***** START DEBUG HERE !!!!! (DO NOT DELETE THIS) *****")
-            # print()
-            # print(pi)
-            # print()
-            # print(transitions)
-            # print()
-            # print(emissions)
-            # print()
-            # print("***** END DEBUG HERE !!!!!  (DO NOT DELETE THIS) *****")
-            # print()
+        pi = self.pi
+        transitions = self.transitions
+        emissions = self.emissions
+        num_states = self.num_states
 
-            # E-STEP, FORWARD, ALPHA
-            c = np.zeros(T, dtype=np.longdouble)
-            alpha = np.zeros((T, num_states))
-            alpha[0] = np.multiply(pi, emissions[:, int(sample[0] - 1)].transpose())
-            c[0] = 1.0 / alpha[0].sum()
-            alpha[0] *= c[0]
+        # print()
+        # print("***** START DEBUG HERE !!!!! (DO NOT DELETE THIS) *****")
+        # print()
+        # print(pi)
+        # print()
+        # print(transitions)
+        # print()
+        # print(emissions)
+        # print()
+        # print("***** END DEBUG HERE !!!!!  (DO NOT DELETE THIS) *****")
+        # print()
 
-            for t in range(1, T):
-                alpha[t] = alpha[t - 1].dot(transitions)
-                alpha[t] = np.multiply(alpha[t], emissions[:, int(sample[t] - 1)].transpose())
-                c[t] = 1.0 / alpha[t].sum()
-                alpha[t] *= c[t]
+        print("Alpha...")
+        # E-STEP, FORWARD, ALPHA
+        c = np.zeros(T, dtype=np.longdouble)
+        alpha = np.zeros((T, num_states))
+        alpha[0] = np.multiply(pi, emissions[:, int(big_file[0] - 1)].transpose())
+        c[0] = 1.0 / alpha[0].sum()
+        alpha[0] *= c[0]
 
-            # E-STEP, BACKWARD, BETA
+        for t in range(1, T):
+            alpha[t] = alpha[t - 1].dot(transitions)
+            alpha[t] = np.multiply(alpha[t], emissions[:, int(big_file[t] - 1)].transpose())
+            c[t] = 1.0 / alpha[t].sum()
+            alpha[t] *= c[t]
 
-            beta = np.zeros((T, num_states), dtype=np.longdouble)
-            gamma1 = np.zeros((T, num_states), dtype=np.longdouble)
-            gamma2 = np.zeros((T, num_states, num_states), dtype=np.longdouble)
-            beta[(T - 1), :] = c[T - 1]
-            # for i in range(T):
-            #     beta.append([0] * self.num_states)
-            #     gamma1.append([0] * self.num_states)
-            #     gamma2.append(HMM.init_N_by_N_matrix(self.num_states))
-            # for i in range(num_states):
-            #     beta[T - 1][i] = c[T - 1]
-            # pi = self.pi # 1 * N
-            # transitions = self.transitions # N * N
-            # emissions = self.emissions # N * vocab_size
-            # num_states = self.num_states # N
+        print("Beta...")
+        # E-STEP, BACKWARD, BETA
+        beta = np.zeros((T, num_states), dtype=np.longdouble)
+        gamma1 = np.zeros((T, num_states), dtype=np.longdouble)
+        gamma2 = np.zeros((T, num_states, num_states), dtype=np.longdouble)
+        beta[(T - 1), :] = c[T - 1]
+        # for i in range(T):
+        #     beta.append([0] * self.num_states)
+        #     gamma1.append([0] * self.num_states)
+        #     gamma2.append(HMM.init_N_by_N_matrix(self.num_states))
+        # for i in range(num_states):
+        #     beta[T - 1][i] = c[T - 1]
+        # pi = self.pi # 1 * N
+        # transitions = self.transitions # N * N
+        # emissions = self.emissions # N * vocab_size
+        # num_states = self.num_states # N
 
-            for t in range(T - 2, -1, -1):
-                beta[t] = transitions.dot(np.multiply(beta[t + 1].transpose(),
-                                                      emissions[:, int(sample[t + 1] - 1)])).transpose()
-                beta[t] *= c[t]
-            # for t in range(T - 2, -1, -1):
-            #     for i in range(num_states):
-            #         for j in range(num_states):
-            #             beta[t][i] += (transitions[i][j] * emissions[j][int(sample[t + 1] - 1)] * beta[t + 1][j])
-            #         beta[t][i] *= c[t]
-            # alpha T * N
-            # E-STEP, VITERBI, GAMMA
+        for t in range(T - 2, -1, -1):
+            beta[t] = transitions.dot(np.multiply(beta[t + 1].transpose(),
+                                                      emissions[:, int(big_file[t + 1] - 1)])).transpose()
+            beta[t] *= c[t]
+        # for t in range(T - 2, -1, -1):
+        #     for i in range(num_states):
+        #         for j in range(num_states):
+        #             beta[t][i] += (transitions[i][j] * emissions[j][int(sample[t + 1] - 1)] * beta[t + 1][j])
+        #         beta[t][i] *= c[t]
+        # alpha T * N
 
+        print("Gamma...")
+        # E-STEP, VITERBI, GAMMA
+        for t in range(T - 1):
+            gamma2[t] = np.multiply(transitions, alpha[t].transpose()
+                                    .dot(np.multiply(beta[t + 1],
+                                                        emissions[:, int(big_file[t + 1] - 1)].transpose())))
+            gamma1[t] = np.sum(gamma2[t], axis=0)
+        # for t in range(T - 1):
+        #     for i in range(num_states):
+        #         for j in range(num_states):
+        #             gamma2[t][i][j] = alpha[t][i] * transitions[i][j] * \
+        #                                   emissions[j][int(sample[t + 1] - 1)] * beta[t + 1][j]
+        #             gamma1[t][i] += gamma2[t][i][j]
+
+        gamma1[T - 1] = np.copy(alpha[T - 1])
+        # for i in range(num_states):
+        #     gamma1[T - 1][i] = alpha[T - 1][i]
+
+        print("Re-estimation...")
+        # M-STEP, PARAMETER RE-ESTIMATION
+
+        pi = np.copy(gamma1[0])
+        # for i in range(num_states):
+        #     pi[i] = gamma1[0][i]
+
+        for i in range(num_states):
+            denom = 0.0
             for t in range(T - 1):
-                gamma2[t] = np.multiply(transitions, alpha[t].transpose()
-                                        .dot(np.multiply(beta[t + 1],
-                                                         emissions[:, int(sample[t + 1] - 1)].transpose())))
-                gamma1[t] = np.sum(gamma2[t], axis=0)
-            # for t in range(T - 1):
-            #     for i in range(num_states):
-            #         for j in range(num_states):
-            #             gamma2[t][i][j] = alpha[t][i] * transitions[i][j] * \
-            #                                   emissions[j][int(sample[t + 1] - 1)] * beta[t + 1][j]
-            #             gamma1[t][i] += gamma2[t][i][j]
-
-            gamma1[T - 1] = np.copy(alpha[T - 1])
-            # for i in range(num_states):
-            #     gamma1[T - 1][i] = alpha[T - 1][i]
-
-            # M-STEP, PARAMETER RE-ESTIMATION
-
-            pi = np.copy(gamma1[0])
-            # for i in range(num_states):
-            #     pi[i] = gamma1[0][i]
-
-            for i in range(num_states):
-                denom = 0.0
+                denom += gamma1[t][i]
+            for j in range(num_states):
+                numer = 0.0
                 for t in range(T - 1):
-                    denom += gamma1[t][i]
-                for j in range(num_states):
-                    numer = 0.0
-                    for t in range(T - 1):
-                        numer += gamma2[t][i][j]
-                    transitions[i][j] = numer / denom
+                    numer += gamma2[t][i][j]
+                transitions[i][j] = numer / denom
 
-            for i in range(num_states):
-                denom = 0.0
+        print("Mid Re-estimation...")
+        for i in range(num_states):
+            denom = 0.0
+            for t in range(T):
+                denom += gamma1[t][i]
+            for j in range(self.vocab_size):
+                numer = 0.0
                 for t in range(T):
-                    denom += gamma1[t][i]
-                for j in char_set:
-                    numer = 0.0
-                    for t in range(T):
-                        if sample[t] - 1 == j:
-                            numer += gamma1[t][i]
-                    emissions[i][j] = numer / denom
+                    if big_file[t] - 1 == j:
+                        numer += gamma1[t][i]
+                emissions[i][j] = numer / denom
 
-            print(gamma1)
-            print(gamma2)
+        # print(gamma1)
+        # print(gamma2)
 
-            # if np.isnan(c) or np.isnan(alpha) or np.isnan(beta) or np.isnan(gamma1) or np.isnan(gamma2) \
-            #         or np.isnan(pi) or np.isnan(transitions) or np.isnan(emissions):
-            #     print("NaN!!!!!")
-            #     continue
+        # if np.isnan(c) or np.isnan(alpha) or np.isnan(beta) or np.isnan(gamma1) or np.isnan(gamma2) \
+        #         or np.isnan(pi) or np.isnan(transitions) or np.isnan(emissions):
+        #     print("NaN!!!!!")
+        #     continue
 
-            # factor = 0.0
-            #
-            # for i in range(num_states):
-            #     factor += pi[i]
-            # for i in range(num_states):
-            #     pi[i] /= factor
+        # factor = 0.0
+        #
+        # for i in range(num_states):
+        #     factor += pi[i]
+        # for i in range(num_states):
+        #     pi[i] /= factor
 
-            # for i in range(num_states):
-            #     factor = 0.0
-            #     for j in range(num_states):
-            #         factor += transitions[i][j]
-            #     for j in range(num_states):
-            #         transitions[i][j] /= factor
+        # for i in range(num_states):
+        #     factor = 0.0
+        #     for j in range(num_states):
+        #         factor += transitions[i][j]
+        #     for j in range(num_states):
+        #         transitions[i][j] /= factor
 
-            # for i in range(num_states):
-            #     factor = 0.0
-            #     for j in range(len(emissions[i])):
-            #         factor += emissions[i][j]
-            #     for j in range(len(emissions[i])):
-            #         emissions[i][j] /= factor
+        # for i in range(num_states):
+        #     factor = 0.0
+        #     for j in range(len(emissions[i])):
+        #         factor += emissions[i][j]
+        #     for j in range(len(emissions[i])):
+        #         emissions[i][j] /= factor
 
-            # if math.isnan(pi[0]):
-            #     print("pi is nan")
-            #     exit()
-            # if math.isnan(transitions[0][0]):
-            #     print("transitions is nan")
-            #     exit()
-            # if math.isnan(emissions[0][0]):
-            #     print("emissions is nan")
-            #     exit()
+        # if math.isnan(pi[0]):
+        #     print("pi is nan")
+        #     exit()
+        # if math.isnan(transitions[0][0]):
+        #     print("transitions is nan")
+        #     exit()
+        # if math.isnan(emissions[0][0]):
+        #     print("emissions is nan")
+        #     exit()
 
-            # print(gamma1)
-            # print(gamma2)
+        # print(gamma1)
+        # print(gamma2)
 
-            self.pi = self.pi / self.pi.sum()
-            sum_of_factors = self.transitions.sum(axis=1)
-            self.transitions = self.transitions / sum_of_factors[:, None]
-            sum_of_factors = self.emissions.sum(axis=1)
-            self.emissions = self.emissions / sum_of_factors[:, None]
+        self.pi = pi / pi.sum()
 
-            self.pi = pi
-            self.transitions = transitions
-            self.emissions = emissions
+        sum_of_factors = transitions.sum(axis=1)
+        self.transitions = transitions / sum_of_factors[:, None]
+
+        sum_of_factors = emissions.sum(axis=1)
+        self.emissions = emissions / sum_of_factors[:, None]
+
+        # self.pi = pi
+        # self.transitions = transitions
+        # self.emissions = emissions
 
         end = time()
         print('EM Finished. Done in', end - begin, 'seconds.')
@@ -352,9 +364,9 @@ def main():
                         help='Path to the testing data directory.')
     parser.add_argument('--max_iters', type=int, default=10,
                         help='The maximum number of EM iterations.')
-    parser.add_argument('--hidden_states', type=int, default=3,
+    parser.add_argument('--hidden_states', type=int, default=5,
                         help='The number of hidden states to use.')
-    parser.add_argument('--train_data_size', type=int, default=500,
+    parser.add_argument('--train_data_size', type=int, default=1000,
                         help='Training data size.')
     parser.add_argument('--test_data_size', type=int, default=1000,
                         help='Testing data size.')
