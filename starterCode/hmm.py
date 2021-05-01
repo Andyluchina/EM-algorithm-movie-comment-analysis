@@ -290,6 +290,7 @@ class HMM:
         denom = gamma1.sum(axis=0) #1*N
         numer = np.zeros((num_states, self.vocab_size))
         for t in range(T):
+            print(big_file[t])
             numer[:,(big_file[t] - 1)] += gamma1[t].transpose()
         emissions = numer / denom[:, None]
 
