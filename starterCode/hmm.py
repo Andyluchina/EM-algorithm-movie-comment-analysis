@@ -1,4 +1,3 @@
-
 # CSC 246 Project 3
 # Qingjie Lu, qlu7
 # Haoqi Zhang, hzhang84
@@ -117,7 +116,7 @@ class HMM:
         #     alpha[0][i] = pi[i] * emissions[i][int(sample[0] - 1)]
         #     c[0] += alpha[0][i]
 
-        alpha[0] = np.multiply(pi,  emissions[:, int(sample[0] - 1)].transpose())
+        alpha[0] = np.multiply(pi, emissions[:, int(sample[0] - 1)].transpose())
         c[0] = 1.0 / alpha[0].sum()
         alpha[0] *= c[0]
         # for i in range(num_states):
@@ -125,7 +124,7 @@ class HMM:
 
         for t in range(1, T):
             alpha[t] = alpha[t - 1].dot(transitions)
-            alpha[t] = np.multiply(alpha[t],  emissions[:, int(sample[t] - 1)].transpose())
+            alpha[t] = np.multiply(alpha[t], emissions[:, int(sample[t] - 1)].transpose())
             c[t] = 1.0 / alpha[t].sum()
             alpha[t] *= c[t]
         # for t in range(1, T):
@@ -158,16 +157,16 @@ class HMM:
 
         for sample in dataset:
 
+            T = len(sample)
+            if T == 0:
+                continue
+
             char_set = set()
             for num in sample:
                 char_set.add(int(num - 1))
 
             count += 1
             print("EM sample " + str(count) + "/" + str(num_sample))
-
-            T = len(sample)
-            if T == 0:
-                continue
 
             pi = self.pi
             transitions = self.transitions
@@ -195,7 +194,7 @@ class HMM:
 
             for t in range(1, T):
                 alpha[t] = alpha[t - 1].dot(transitions)
-                alpha[t] = np.multiply(alpha[t],  emissions[:, int(sample[t] - 1)].transpose())
+                alpha[t] = np.multiply(alpha[t], emissions[:, int(sample[t] - 1)].transpose())
                 c[t] = 1.0 / alpha[t].sum()
                 alpha[t] *= c[t]
 
@@ -271,6 +270,11 @@ class HMM:
                             numer += gamma1[t][i]
                     emissions[i][j] = numer / denom
 
+            if np.isnan(c) or np.isnan(alpha) or np.isnan(beta) or np.isnan(gamma1) or np.isnan(gamma2) \
+                    or np.isnan(pi) or np.isnan(transitions) or np.isnan(emissions):
+                print("NaN!!!!!")
+                continue
+
             # factor = 0.0
             #
             # for i in range(num_states):
@@ -278,14 +282,12 @@ class HMM:
             # for i in range(num_states):
             #     pi[i] /= factor
 
-
             # for i in range(num_states):
             #     factor = 0.0
             #     for j in range(num_states):
             #         factor += transitions[i][j]
             #     for j in range(num_states):
             #         transitions[i][j] /= factor
-
 
             # for i in range(num_states):
             #     factor = 0.0
@@ -304,15 +306,19 @@ class HMM:
             #     print("emissions is nan")
             #     exit()
 
+            # print(gamma1)
+            # print(gamma2)
+
+            self.pi = self.pi / self.pi.sum()
+            sum_of_factors = self.transitions.sum(axis=1)
+            self.transitions = self.transitions / sum_of_factors[:, None]
+            sum_of_factors = self.emissions.sum(axis=1)
+            self.emissions = self.emissions / sum_of_factors[:, None]
+
             self.pi = pi
             self.transitions = transitions
             self.emissions = emissions
 
-        self.pi = self.pi / self.pi.sum()
-        sum_of_factors = self.transitions.sum(axis=1)
-        self.transitions = self.transitions / sum_of_factors[:, None]
-        sum_of_factors = self.emissions.sum(axis=1)
-        self.emissions = self.emissions / sum_of_factors[:, None]
         end = time()
         print('EM Finished. Done in', end - begin, 'seconds.')
 
@@ -341,11 +347,11 @@ def main():
     parser.add_argument('--test_path_neg',
                         default='/Users/zhanghaoqi/Desktop/csc246p3/csc246project3/imdbFor246/test/neg',
                         help='Path to the testing data directory.')
-    parser.add_argument('--max_iters', type=int, default=1000,
+    parser.add_argument('--max_iters', type=int, default=10,
                         help='The maximum number of EM iterations.')
     parser.add_argument('--hidden_states', type=int, default=3,
                         help='The number of hidden states to use.')
-    parser.add_argument('--train_data_size', type=int, default=150,
+    parser.add_argument('--train_data_size', type=int, default=500,
                         help='Training data size.')
     parser.add_argument('--test_data_size', type=int, default=1000,
                         help='Testing data size.')
@@ -382,14 +388,17 @@ def main():
         converge, logProb = hmm1.em_step(train_data1, logProb)
         # logProb_pos.append(round(logProb, 2))  # Drawing, y-axis
         # x_pos.append(i)  # Drawing, x-axis
-        new_pos_pi = hmm1.pi
-        new_pos_transitions = hmm1.transitions
-        new_pos_emissions = hmm1.emissions
         if converge is True:
             print("Congratulations. EM algorithm converges after " + str(i) + " iteration(s).")
             break
+        else:
+            new_pos_pi = hmm1.pi
+            new_pos_transitions = hmm1.transitions
+            new_pos_emissions = hmm1.emissions
     if converge is False:
         print("POSITIVE EM algorithm is not converging.")
+
+    # hmm1_logProb = logProb
 
     print("=======================================================================================")
 
@@ -402,14 +411,17 @@ def main():
         converge, logProb = hmm2.em_step(train_data2, logProb)
         # logProb_neg.append(round(logProb, 2))
         # x_neg.append(i)
-        new_neg_pi = hmm2.pi
-        new_neg_transitions = hmm2.transitions
-        new_neg_emissions = hmm2.emissions
         if converge is True:
             print("Congratulations. EM algorithm converges after " + str(i) + " iteration(s).")
             break
+        else:
+            new_neg_pi = hmm2.pi
+            new_neg_transitions = hmm2.transitions
+            new_neg_emissions = hmm2.emissions
     if converge is False:
         print("NEGATIVE EM algorithm is not converging.")
+
+    # hmm2_logProb = logProb
 
     hmm1.pi = new_pos_pi
     hmm1.transitions = new_pos_transitions
@@ -418,6 +430,8 @@ def main():
     hmm2.pi = new_neg_pi
     hmm2.transitions = new_neg_transitions
     hmm2.emissions = new_neg_emissions
+
+    # scaling_factor = hmm1_logProb / hmm2_logProb
 
     # plt.plot(x_pos, logProb_pos, marker='o', color='blue', linewidth=3)
     # plt.title('MEAN Log Likelihood for Training: POSITIVE', size=14)
