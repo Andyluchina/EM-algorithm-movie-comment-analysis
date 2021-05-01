@@ -176,6 +176,7 @@ def load_and_convert_data_chars_to_ints(paths, vocab, num):
 
 
 def parse_data(this_path, num):
+
     print("NLP Util smoketest.")
     paths = [this_path]
     print("Begin loading vocab... ", end='')
@@ -184,16 +185,19 @@ def parse_data(this_path, num):
     train_vocab = build_vocab_chars(paths, num)
     end = time()
     print('Done in', end - begin, 'seconds.  Found', len(train_vocab), 'unique tokens.')
+
     print('Begin loading all data and converting to ints... ', end='')
     sys.stdout.flush()
     begin = time()
     train_data = load_and_convert_data_chars_to_ints(paths, train_vocab, num)
     end = time()
     print('done in', end-begin, 'seconds.')
+
     return train_data, train_vocab
 
 
 def parse_data_with_existing_vocab(this_path, vocab, num):
+
     print("NLP Util smoketest.")
     paths = [this_path]
     print("Begin loading vocab... ", end='')
@@ -202,16 +206,15 @@ def parse_data_with_existing_vocab(this_path, vocab, num):
     train_vocab = build_vocab_chars_with_existing_vocab(paths, vocab, num)
     end = time()
     print('Done in', end - begin, 'seconds.  Found', len(train_vocab), 'unique tokens.')
+
     print('Begin loading all data and converting to ints... ', end='')
     sys.stdout.flush()
     begin = time()
     train_data = load_and_convert_data_chars_to_ints(paths, train_vocab, num)
     end = time()
     print('done in', end-begin, 'seconds.')
+
     return train_data, train_vocab
 
-    # print(len(data))
-    # print("Data[0] = ", data[0])
-    # print('Press enter to quit.')
-    # input()
-    # print('Quitting.. may take some time to free memory.')
+
+# end of nlputil.py

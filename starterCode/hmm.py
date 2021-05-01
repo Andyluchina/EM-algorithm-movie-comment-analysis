@@ -1,3 +1,4 @@
+
 # CSC 246 Project 3
 # Qingjie Lu, qlu7
 # Haoqi Zhang, hzhang84
@@ -11,6 +12,7 @@ import numpy as np
 import os
 import sys
 import pickle
+
 from nlputil import *
 from time import time
 
@@ -39,10 +41,13 @@ class HMM:
 
         pi = np.random.rand(num_states)  # 1 * N
 
+        # Normalization for pi
         factor = pi.sum()
         pi /= factor
 
         transitions = []  # N * N
+
+        # Normalization for transitions
         for i in range(num_states):
             transitions.append([])
             factor = 0.0
@@ -52,8 +57,11 @@ class HMM:
                 transitions[i].append(seed)
             for j in range(num_states):
                 transitions[i][j] /= factor
+        transitions = np.asarray(transitions)
 
         emissions = []  # N * vocab_size
+
+        # Normalization for emissions
         for i in range(num_states):
             emissions.append([])
             factor = 0.0
@@ -63,24 +71,23 @@ class HMM:
                 emissions[i].append(seed)
             for j in range(0, vocab_size):
                 emissions[i][j] /= factor
-
-        transitions = np.asarray(transitions)
         emissions = np.asarray(emissions)
 
-        # initialize HMM
+        # Initialize HMM
         self.pi = pi
         self.transitions = transitions
         self.emissions = emissions
         self.num_states = num_states
         self.vocab_size = vocab_size
 
-    def save(self,filename):
+    def save(self, filename):
         with open(filename, 'wb') as fh:
             pickle.dump(self, fh)
 
     def load_hmm(filename):
         with open(filename, 'rb') as fh:
             return pickle.load(fh)
+
     # return the loglikelihood for a complete dataset (train OR test) (list of matrices)
     def loglikelihood(self, dataset):
 
@@ -92,9 +99,8 @@ class HMM:
 
         for sample in dataset:
             sample_log = self.loglikelihood_helper(sample)
-            # drop file
             if sample_log == -math.inf:
-                print("dropped_file")
+                print("File Dropped")
                 dropped_file += 1.0
             else:
                 mean_log += sample_log
@@ -119,37 +125,18 @@ class HMM:
 
         c = np.zeros(T, dtype=np.longdouble)  # 1 * T
         alpha = np.zeros((T, num_states), dtype=np.longdouble)  # T * N
-        # for i in range(num_states):
-        #     alpha[0][i] = pi[i] * emissions[i][int(sample[0] - 1)]
-        #     c[0] += alpha[0][i]
 
         alpha[0] = np.multiply(pi, emissions[:, int(sample[0] - 1)].transpose())
         c[0] = 1.0 / alpha[0].sum()
         alpha[0] *= c[0]
-        # for i in range(num_states):
-        #     alpha[0][i] = c[0] * alpha[0][i]
 
-        for t in range(1, T):
+        for t in range(1, T):  # Normalize Alpha
             alpha[t] = alpha[t - 1].dot(transitions)
             alpha[t] = np.multiply(alpha[t], emissions[:, int(sample[t] - 1)].transpose())
             c[t] = 1.0 / alpha[t].sum()
             alpha[t] *= c[t]
-        # for t in range(1, T):
-        #     for i in range(num_states):
-        #         for j in range(num_states):
-        #             alpha[t][i] += (alpha[t - 1][j] * transitions[j][i])
-        #             # print(transitions[j][i])
-        #         alpha[t][i] *= emissions[i][int(sample[t] - 1)]
-        #         c[t] += alpha[t][i]
-        #     # print(alpha[t - 1].dot(transitions))
-        #     c[t] = 1.0 / c[t]
-        #     for i in range(num_states):
-        #         alpha[t][i] *= c[t]
 
         logProb = -np.log10(c).sum()
-        # for i in range(T):
-        #     logProb += math.log10(c[i])
-        #     print(math.log10(c[i]))
 
         return logProb
 
@@ -158,48 +145,23 @@ class HMM:
     # Note: you may find it helpful to write helper methods for the e-step and m-step,
     def em_step(self, dataset, old_log_prob):
 
-        count = 0
         begin = time()
-
         big_file = []
 
         for sample in dataset:
             for number in sample:
                 big_file.append(number)
-                ##### File Connection Problem
 
         T = len(big_file)
-
-        # T = len(sample)
-        # if T == 0:
-        #     continue
-
-        # char_set = set()
-        # for num in sample:
-        #     char_set.add(int(num - 1))
-
-        # count += 1
-        # print("EM sample " + str(count) + "/" + str(num_sample))
 
         pi = self.pi
         transitions = self.transitions
         emissions = self.emissions
         num_states = self.num_states
 
-        # print()
-        # print("***** START DEBUG HERE !!!!! (DO NOT DELETE THIS) *****")
-        # print()
-        # print(pi)
-        # print()
-        # print(transitions)
-        # print()
-        # print(emissions)
-        # print()
-        # print("***** END DEBUG HERE !!!!!  (DO NOT DELETE THIS) *****")
-        # print()
 
-        print("Alpha...")
         # E-STEP, FORWARD, ALPHA
+        print("Running Alpha...")
         c = np.zeros(T, dtype=np.longdouble)
         alpha = np.zeros((T, num_states))
         alpha[0] = np.multiply(pi, emissions[:, int(big_file[0] - 1)].transpose())
@@ -212,58 +174,33 @@ class HMM:
             c[t] = 1.0 / alpha[t].sum()
             alpha[t] *= c[t]
 
-        print("Beta...")
+
         # E-STEP, BACKWARD, BETA
+        print("Running Beta...")
         beta = np.zeros((T, num_states), dtype=np.longdouble)
         gamma1 = np.zeros((T, num_states), dtype=np.longdouble)
         gamma2 = np.zeros((T, num_states, num_states), dtype=np.longdouble)
         beta[(T - 1), :] = c[T - 1]
-        # for i in range(T):
-        #     beta.append([0] * self.num_states)
-        #     gamma1.append([0] * self.num_states)
-        #     gamma2.append(HMM.init_N_by_N_matrix(self.num_states))
-        # for i in range(num_states):
-        #     beta[T - 1][i] = c[T - 1]
-        # pi = self.pi # 1 * N
-        # transitions = self.transitions # N * N
-        # emissions = self.emissions # N * vocab_size
-        # num_states = self.num_states # N
 
         for t in range(T - 2, -1, -1):
             beta[t] = transitions.dot(np.multiply(beta[t + 1].transpose(),
                                                       emissions[:, int(big_file[t + 1] - 1)])).transpose()
             beta[t] *= c[t]
-        # for t in range(T - 2, -1, -1):
-        #     for i in range(num_states):
-        #         for j in range(num_states):
-        #             beta[t][i] += (transitions[i][j] * emissions[j][int(sample[t + 1] - 1)] * beta[t + 1][j])
-        #         beta[t][i] *= c[t]
-        # alpha T * N
 
-        print("Gamma...")
+
         # E-STEP, VITERBI, GAMMA
+        print("Running Gamma...")
         for t in range(T - 1):
             gamma2[t] = np.multiply(transitions, alpha[t].transpose()
                                     .dot(np.multiply(beta[t + 1],
                                                         emissions[:, int(big_file[t + 1] - 1)].transpose())))
             gamma1[t] = np.sum(gamma2[t], axis=0)
-        # for t in range(T - 1):
-        #     for i in range(num_states):
-        #         for j in range(num_states):
-        #             gamma2[t][i][j] = alpha[t][i] * transitions[i][j] * \
-        #                                   emissions[j][int(sample[t + 1] - 1)] * beta[t + 1][j]
-        #             gamma1[t][i] += gamma2[t][i][j]
-
         gamma1[T - 1] = np.copy(alpha[T - 1])
-        # for i in range(num_states):
-        #     gamma1[T - 1][i] = alpha[T - 1][i]
 
-        print("Re-estimation...")
+
         # M-STEP, PARAMETER RE-ESTIMATION
-
+        print("Parameter Re-Estimation...")
         pi = np.copy(gamma1[0])
-        # for i in range(num_states):
-        #     pi[i] = gamma1[0][i]
 
         for i in range(num_states):
             denom = 0.0
@@ -275,79 +212,20 @@ class HMM:
                     numer += gamma2[t][i][j]
                 transitions[i][j] = numer / denom
 
-        print("Mid Re-estimation...")
-        # for i in range(num_states):
-        #     denom = 0.0
-        #     for t in range(T):
-        #         denom += gamma1[t][i]
-        #     for j in range(self.vocab_size):
-        #         numer = 0.0
-        #         for t in range(T):
-        #             if big_file[t] - 1 == j:
-        #                 numer += gamma1[t][i]
-        #         emissions[i][j] = numer / denom
-
-        denom = gamma1.sum(axis=0) #1*N
+        denom = gamma1.sum(axis=0)  # 1 * N
         numer = np.zeros((num_states, self.vocab_size))
+
         for t in range(T):
-            # print((big_file[t] - 1))
-            numer[:,int(big_file[t] - 1)] += gamma1[t].transpose()
+            numer[:, int(big_file[t] - 1)] += gamma1[t].transpose()
         emissions = numer / denom[:, None]
 
-
-        # print(gamma1) #T*N
-        # print(gamma2)
-
-        # if np.isnan(c) or np.isnan(alpha) or np.isnan(beta) or np.isnan(gamma1) or np.isnan(gamma2) \
-        #         or np.isnan(pi) or np.isnan(transitions) or np.isnan(emissions):
-        #     print("NaN!!!!!")
-        #     continue
-
-        # factor = 0.0
-        #
-        # for i in range(num_states):
-        #     factor += pi[i]
-        # for i in range(num_states):
-        #     pi[i] /= factor
-
-        # for i in range(num_states):
-        #     factor = 0.0
-        #     for j in range(num_states):
-        #         factor += transitions[i][j]
-        #     for j in range(num_states):
-        #         transitions[i][j] /= factor
-
-        # for i in range(num_states):
-        #     factor = 0.0
-        #     for j in range(len(emissions[i])):
-        #         factor += emissions[i][j]
-        #     for j in range(len(emissions[i])):
-        #         emissions[i][j] /= factor
-
-        # if math.isnan(pi[0]):
-        #     print("pi is nan")
-        #     exit()
-        # if math.isnan(transitions[0][0]):
-        #     print("transitions is nan")
-        #     exit()
-        # if math.isnan(emissions[0][0]):
-        #     print("emissions is nan")
-        #     exit()
-
-        # print(gamma1)
-        # print(gamma2)
-
-        self.pi = pi / pi.sum()
+        self.pi = pi / pi.sum()  # Update pi
 
         sum_of_factors = transitions.sum(axis=1)
-        self.transitions = transitions / sum_of_factors[:, None]
+        self.transitions = transitions / sum_of_factors[:, None]  # Update transitions
 
         sum_of_factors = emissions.sum(axis=1)
-        self.emissions = emissions / sum_of_factors[:, None]
-
-        # self.pi = pi
-        # self.transitions = transitions
-        # self.emissions = emissions
+        self.emissions = emissions / sum_of_factors[:, None]  # Update emissions
 
         end = time()
         print('EM Finished. Done in', end - begin, 'seconds.')
@@ -355,16 +233,14 @@ class HMM:
         # FINAL LOG LIKELIHOOD
         logProb = self.loglikelihood(dataset)
         if logProb > old_log_prob:
-            return False, logProb
-        return True, logProb
-
-    # Return a "completed" sample by adding additional steps based on model probability.
-    # def complete_sequence(self, sample, steps):
-    #     pass
+            return False, logProb  # EM NOT Converge
+        return True, logProb  # EM Converge
 
 
 def main():
+
     parser = argparse.ArgumentParser(description='Program to build and train a neural network.')
+
     parser.add_argument('--train_path_pos',
                         default='/Users/zhanghaoqi/Desktop/csc246p3/csc246project3/imdbFor246/train/pos',
                         help='Path to the training data directory.')
@@ -377,13 +253,14 @@ def main():
     parser.add_argument('--test_path_neg',
                         default='/Users/zhanghaoqi/Desktop/csc246p3/csc246project3/imdbFor246/test/neg',
                         help='Path to the testing data directory.')
+
     parser.add_argument('--max_iters', type=int, default=10,
                         help='The maximum number of EM iterations.')
-    parser.add_argument('--hidden_states', type=int, default=5,
+    parser.add_argument('--hidden_states', type=int, default=3,
                         help='The number of hidden states to use.')
-    parser.add_argument('--train_data_size', type=int, default=1000,
+    parser.add_argument('--train_data_size', type=int, default=2000,
                         help='Training data size.')
-    parser.add_argument('--test_data_size', type=int, default=1000,
+    parser.add_argument('--test_data_size', type=int, default=2000,
                         help='Testing data size.')
 
     args = parser.parse_args()
@@ -397,21 +274,22 @@ def main():
     print("=======================================================================================")
 
     print(train_vocab1)
-    hmm1 = HMM(args.hidden_states, len(train_vocab1))
-    hmm2 = HMM(args.hidden_states, len(train_vocab1))
 
+    hmm1 = HMM(args.hidden_states, len(train_vocab1))  # Positive HMM
     new_pos_pi = hmm1.pi
     new_pos_transitions = hmm1.transitions
     new_pos_emissions = hmm1.emissions
 
+    hmm2 = HMM(args.hidden_states, len(train_vocab1))  # Negative HMM
     new_neg_pi = hmm2.pi
     new_neg_transitions = hmm2.transitions
     new_neg_emissions = hmm2.emissions
 
-    logProb = hmm1.loglikelihood(train_data1)
-    # logProb_pos = [round(logProb, 2)]  # Drawing, y-axis
-    # x_pos = [int(0)]  # Drawing, x-axis
 
+    # Positive EM
+    logProb = hmm1.loglikelihood(train_data1)
+    # logProb_pos = [round(logProb, 2)]
+    # x_pos = [int(0)]
     converge = False
     for i in range(1, args.max_iters + 1):
         print("POSITIVE EM algorithm working ... Iteration(s) #" + str(i) + " ...")
@@ -428,10 +306,10 @@ def main():
     if converge is False:
         print("POSITIVE EM algorithm is not converging.")
 
-    # hmm1_logProb = logProb
-
     print("=======================================================================================")
 
+
+    # Negative EM
     logProb = hmm2.loglikelihood(train_data2)
     # logProb_neg = [round(logProb, 2)]
     # x_neg = [int(0)]
@@ -451,21 +329,22 @@ def main():
     if converge is False:
         print("NEGATIVE EM algorithm is not converging.")
 
-    # hmm2_logProb = logProb
 
+    # Update Positive HMM
     hmm1.pi = new_pos_pi
     hmm1.transitions = new_pos_transitions
     hmm1.emissions = new_pos_emissions
 
+    # Update Negative HMM
     hmm2.pi = new_neg_pi
     hmm2.transitions = new_neg_transitions
     hmm2.emissions = new_neg_emissions
 
-    # save two models
+    # Save Two Models
     hmm1.save("PositiveHMM")
     hmm2.save("NegativeHMM")
-    # scaling_factor = hmm1_logProb / hmm2_logProb
 
+    # Plot Log Likelihood
     # plt.plot(x_pos, logProb_pos, marker='o', color='blue', linewidth=3)
     # plt.title('MEAN Log Likelihood for Training: POSITIVE', size=14)
     # plt.xlabel('Iterations before Converge', size=12)
@@ -493,7 +372,7 @@ def main():
                 if answer is not None:
                     test_pos.append(answer)
                 else:
-                    print("dropped P")
+                    print("Drop Positive Files.")
     test_neg = []
     for path in paths_test_neg:
         for filename in os.listdir(path):
@@ -502,7 +381,7 @@ def main():
                 if answer is not None:
                     test_neg.append(answer)
                 else:
-                    print("dropped N")
+                    print("Drop Negative Files.")
 
     accurate_sample = 0
     total_sample = 0
@@ -538,7 +417,7 @@ def main():
             accurate_sample += 1
         else:
             print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
-                  " WRONG:  " + str(log_prob1) + " <= " + str(log_prob2) + "!!!!!!!!!!")
+                  " WRONG:  " + str(log_prob1) + " <= " + str(log_prob2) + ".")
 
     print()
     count = 0
@@ -570,27 +449,18 @@ def main():
             accurate_sample += 1
         else:
             print("Negative Sample " + str(count) + "/" + str(test_neg_num) +
-                  " WRONG:  " + str(log_prob1) + " >= " + str(log_prob2) + "!!!!!!!!!!")
+                  " WRONG:  " + str(log_prob1) + " >= " + str(log_prob2) + ".")
 
     print()
     print("Total Accurate Sample: " + str(int(accurate_sample)))
     print("Total Tested Sample: " + str(int(total_sample)))
     print("Total Accuracy: " + str(accurate_sample / total_sample))
     print()
-    print(new_pos_pi)
-    print()
-    print(new_pos_transitions)
-    print()
-    print(new_pos_emissions)
-    print()
-    print(new_neg_pi)
-    print()
-    print(new_neg_transitions)
-    print()
-    print(new_neg_emissions)
-    print()
     print("Program Finishes.")
 
 
 if __name__ == '__main__':
     main()
+
+
+# end of hmm.py
