@@ -202,15 +202,9 @@ class HMM:
         print("Parameter Re-Estimation...")
         pi = np.copy(gamma1[0])
 
-        for i in range(num_states):
-            denom = 0.0
-            for t in range(T - 1):
-                denom += gamma1[t][i]
-            for j in range(num_states):
-                numer = 0.0
-                for t in range(T - 1):
-                    numer += gamma2[t][i][j]
-                transitions[i][j] = numer / denom
+        denom1 = gamma1.sum(axis=0)  # 1 * N
+        numer1 = gamma2.sum(axis=0) #N * N
+        transitions = numer1 / denom1[:, None]
 
         denom = gamma1.sum(axis=0)  # 1 * N
         numer = np.zeros((num_states, self.vocab_size))
