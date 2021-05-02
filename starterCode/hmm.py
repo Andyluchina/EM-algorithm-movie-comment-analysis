@@ -278,7 +278,10 @@ class HMM:
             # for i in range(num_states):
             #     pi[i] /= factor
 
+            self.pi = pi / pi.sum()  # Update pi
 
+            sum_of_factors = transitions.sum(axis=1)
+            self.transitions = transitions / sum_of_factors[:, None]  # Update transitions
             # for i in range(num_states):
             #     factor = 0.0
             #     for j in range(num_states):
