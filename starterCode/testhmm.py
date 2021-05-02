@@ -1,24 +1,33 @@
+
 import argparse
 import numpy as np
-import hmm
 import os
+import sys
+import math
+
+from hmm import HMM
+from nlputil import *
+import pickle
 
 
 def main():
     parser = argparse.ArgumentParser(description='Evaluate a model on a test file.')
     parser.add_argument('--modelpos', help='Path to the model file.', default='PositiveHMM')
     parser.add_argument('--modelneg', help='Path to the model file.', default='NegativeHMM')
-    parser.add_argument('--test_path_pos', help='Path to the test file.', default='../imdbFor246/test/pos')
-    parser.add_argument('--test_path_neg', help='Path to the test file.', default='../imdbFor246/test/neg')
-    parser.add_argument('--test_data_size', type=int, default=2000,
+    parser.add_argument('--test_path_pos',
+                        help='Path to the positive test file.',
+                        default='/Users/zhanghaoqi/Desktop/csc246p3/csc246project3/imdbFor246/test/pos')
+    parser.add_argument('--test_path_neg',
+                        help='Path to the negative test file.',
+                        default='/Users/zhanghaoqi/Desktop/csc246p3/csc246project3/imdbFor246/test/neg')
+    parser.add_argument('--test_data_size', type=int, default=5000,
                             help='Testing data size.')
     args = parser.parse_args()
 
-    # Load the test data.
 
-    # Load the mlp.
-    hmm1 = hmm.HMM.load_mlp(args.modelpos)
-    hmm2 = hmm.HMM.load_mlp(args.modelneg)
+    # Load the test data.
+    hmm1 = HMM.load_hmm(args.modelpos)
+    hmm2 = HMM.load_hmm(args.modelneg)
 
     print("=======================================================================================")
     print()
@@ -31,7 +40,7 @@ def main():
     for path in paths_test_pos:
         for filename in os.listdir(path):
             with open(os.path.join(path, filename)) as fh:
-                answer = convert_chars_to_ints(fh.read(), hmm1.train_vocab1)
+                answer = convert_chars_to_ints(fh.read(), hmm1.train_vocab)
                 if answer is not None:
                     test_pos.append(answer)
                 else:
@@ -40,7 +49,7 @@ def main():
     for path in paths_test_neg:
         for filename in os.listdir(path):
             with open(os.path.join(path, filename)) as fh:
-                answer = convert_chars_to_ints(fh.read(), hmm2.train_vocab1)
+                answer = convert_chars_to_ints(fh.read(), hmm2.train_vocab)
                 if answer is not None:
                     test_neg.append(answer)
                 else:
@@ -60,27 +69,26 @@ def main():
         log_prob1 = hmm1.loglikelihood_helper(sample)
         log_prob2 = hmm2.loglikelihood_helper(sample)
 
-        if log_prob1 == -math.inf:
-            print("log_prob1 goes to negative infinity")
-            continue
-        if log_prob2 == -math.inf:
-            print("log_prob2 goes to negative infinity")
-            continue
-        if math.isnan(log_prob1):
-            print("log_prob1 is nan")
-            continue
-        if math.isnan(log_prob2):
-            print("log_prob2 is nan")
+        if math.isnan(log_prob1) is True and math.isnan(log_prob2) is True:
+            print("File Dropped")
             continue
 
         total_sample += 1
-        if log_prob1 > log_prob2:
+
+        if math.isnan(log_prob2) is True and math.isnan(log_prob1) is not True:
+            print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
+                  " CORRECT: NEGATIVE UNDERFLOW.")
+            accurate_sample += 1
+        elif math.isnan(log_prob1) is True and math.isnan(log_prob2) is not True:
+            print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
+                  " WRONG: POSITIVE UNDERFLOW.")
+        elif log_prob1 >= log_prob2:
             print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
                   " CORRECT:  " + str(log_prob1) + " > " + str(log_prob2) + ".")
             accurate_sample += 1
         else:
             print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
-                  " WRONG:  " + str(log_prob1) + " <= " + str(log_prob2) + ".")
+                  " WRONG:  " + str(log_prob1) + " < " + str(log_prob2) + ".")
 
     print()
     count = 0
@@ -92,27 +100,26 @@ def main():
         log_prob1 = hmm1.loglikelihood_helper(sample)
         log_prob2 = hmm2.loglikelihood_helper(sample)
 
-        if log_prob1 == -math.inf:
-            print("log_prob1 goes to negative infinity")
-            continue
-        if log_prob2 == -math.inf:
-            print("log_prob2 goes to negative infinity")
-            continue
-        if math.isnan(log_prob1):
-            print("log_prob1 is nan")
-            continue
-        if math.isnan(log_prob2):
-            print("log_prob2 is nan")
+        if math.isnan(log_prob1) is True and math.isnan(log_prob2) is True:
+            print("File Dropped")
             continue
 
         total_sample += 1
-        if log_prob1 < log_prob2:
+
+        if math.isnan(log_prob1) is True and math.isnan(log_prob2) is not True:
+            print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
+                  " CORRECT: POSITIVE UNDERFLOW.")
+            accurate_sample += 1
+        elif math.isnan(log_prob2) is True and math.isnan(log_prob1) is not True:
+            print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
+                  " WRONG: NEGATIVE UNDERFLOW.")
+        elif log_prob1 <= log_prob2:
             print("Negative Sample " + str(count) + "/" + str(test_neg_num) +
                   " CORRECT:  " + str(log_prob1) + " < " + str(log_prob2) + ".")
             accurate_sample += 1
         else:
             print("Negative Sample " + str(count) + "/" + str(test_neg_num) +
-                  " WRONG:  " + str(log_prob1) + " >= " + str(log_prob2) + ".")
+                  " WRONG:  " + str(log_prob1) + " > " + str(log_prob2) + ".")
 
     print()
     print("Total Accurate Sample: " + str(int(accurate_sample)))
@@ -120,6 +127,7 @@ def main():
     print("Total Accuracy: " + str(accurate_sample / total_sample))
     print()
     print("Program Finishes.")
+
 
 if __name__ == '__main__':
     main()

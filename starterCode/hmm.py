@@ -33,10 +33,10 @@ from time import time
 
 
 class HMM:
-    __slots__ = ('pi', 'transitions', 'emissions', 'num_states', 'vocab_size')
+    __slots__ = ('train_vocab', 'pi', 'transitions', 'emissions', 'num_states', 'vocab_size')
 
     # The constructor should initalize all the model parameters.
-    def __init__(self, num_states, vocab_size):
+    def __init__(self, num_states, vocab_size, train_vocab):
 
         pi = np.random.rand(num_states)  # 1 * N
 
@@ -78,6 +78,7 @@ class HMM:
         self.emissions = emissions
         self.num_states = num_states
         self.vocab_size = vocab_size
+        self.train_vocab = train_vocab
 
     def save(self, filename):
         with open(filename, 'wb') as fh:
@@ -132,7 +133,10 @@ class HMM:
         for t in range(1, T):  # Normalize Alpha
             alpha[t] = alpha[t - 1].dot(transitions)
             alpha[t] = np.multiply(alpha[t], emissions[:, int(sample[t] - 1)].transpose())
-            c[t] = 1.0 / alpha[t].sum()
+            factor = alpha[t].sum()
+            if factor == 0.0:
+                return -math.inf
+            c[t] = 1.0 / factor
             alpha[t] *= c[t]
 
         logProb = -np.log10(c).sum()
@@ -208,17 +212,13 @@ class HMM:
             numer[:, int(big_file[t] - 1)] += gamma1[t].transpose()
         emissions = numer / denom[:, None]
 
-        self.pi = pi
-        self.transitions = transitions
-        self.emissions = emissions
+        self.pi = pi / pi.sum()  # Update pi
 
-        # self.pi = pi / pi.sum()  # Update pi
-        #
-        # sum_of_factors = transitions.sum(axis=1)
-        # self.transitions = transitions / sum_of_factors[:, None]  # Update transitions
-        #
-        # sum_of_factors = emissions.sum(axis=1)
-        # self.emissions = emissions / sum_of_factors[:, None]  # Update emissions
+        sum_of_factors = transitions.sum(axis=1)
+        self.transitions = transitions / sum_of_factors[:, None]  # Update transitions
+
+        sum_of_factors = emissions.sum(axis=1)
+        self.emissions = emissions / sum_of_factors[:, None]  # Update emissions
 
         end = time()
         print('EM Finished. Done in', end - begin, 'seconds.')
@@ -246,11 +246,11 @@ def main():
                         default='/Users/zhanghaoqi/Desktop/csc246p3/csc246project3/imdbFor246/test/neg',
                         help='Path to the testing data directory.')
 
-    parser.add_argument('--max_iters', type=int, default=10,
+    parser.add_argument('--max_iters', type=int, default=1000,
                         help='The maximum number of EM iterations.')
     parser.add_argument('--hidden_states', type=int, default=5,
                         help='The number of hidden states to use.')
-    parser.add_argument('--train_data_size', type=int, default=1000,
+    parser.add_argument('--train_data_size', type=int, default=5000,
                         help='Training data size.')
     parser.add_argument('--test_data_size', type=int, default=2000,
                         help='Testing data size.')
@@ -267,26 +267,26 @@ def main():
 
     print(train_vocab1)
 
-    hmm1 = HMM(args.hidden_states, len(train_vocab1))  # Positive HMM
+    hmm1 = HMM(args.hidden_states, len(train_vocab1), train_vocab1)  # Positive HMM
     new_pos_pi = hmm1.pi
     new_pos_transitions = hmm1.transitions
     new_pos_emissions = hmm1.emissions
 
-    hmm2 = HMM(args.hidden_states, len(train_vocab1))  # Negative HMM
+    hmm2 = HMM(args.hidden_states, len(train_vocab1), train_vocab1)  # Negative HMM
     new_neg_pi = hmm2.pi
     new_neg_transitions = hmm2.transitions
     new_neg_emissions = hmm2.emissions
 
     # Positive EM
     logProb = hmm1.loglikelihood(train_data1)
-    # logProb_pos = [round(logProb, 2)]
-    # x_pos = [int(0)]
+    logProb_pos = [round(logProb, 2)]
+    x_pos = [int(0)]
     converge = False
     for i in range(1, args.max_iters + 1):
         print("POSITIVE EM algorithm working ... Iteration(s) #" + str(i) + " ...")
         converge, logProb = hmm1.em_step(train_data1, logProb)
-        # logProb_pos.append(round(logProb, 2))  # Drawing, y-axis
-        # x_pos.append(i)  # Drawing, x-axis
+        logProb_pos.append(round(logProb, 2))  # Drawing, y-axis
+        x_pos.append(i)  # Drawing, x-axis
         new_pos_pi = hmm1.pi
         new_pos_transitions = hmm1.transitions
         new_pos_emissions = hmm1.emissions
@@ -300,14 +300,14 @@ def main():
 
     # Negative EM
     logProb = hmm2.loglikelihood(train_data2)
-    # logProb_neg = [round(logProb, 2)]
-    # x_neg = [int(0)]
+    logProb_neg = [round(logProb, 2)]
+    x_neg = [int(0)]
     converge = False
     for i in range(1, args.max_iters + 1):
         print("NEGATIVE EM algorithm working ... Iteration(s) #" + str(i) + " ...")
         converge, logProb = hmm2.em_step(train_data2, logProb)
-        # logProb_neg.append(round(logProb, 2))
-        # x_neg.append(i)
+        logProb_neg.append(round(logProb, 2))
+        x_neg.append(i)
         new_neg_pi = hmm2.pi
         new_neg_transitions = hmm2.transitions
         new_neg_emissions = hmm2.emissions
@@ -331,18 +331,18 @@ def main():
     hmm1.save("PositiveHMM")
     hmm2.save("NegativeHMM")
 
-    # Plot Log Likelihood
-    # plt.plot(x_pos, logProb_pos, marker='o', color='blue', linewidth=3)
-    # plt.title('MEAN Log Likelihood for Training: POSITIVE', size=14)
-    # plt.xlabel('Iterations before Converge', size=12)
-    # plt.ylabel('Log Likelihood', size=12)
-    # plt.show()
-    #
-    # plt.plot(x_neg, logProb_neg, marker='o', color='blue', linewidth=3)
-    # plt.title('MEAN Log Likelihood for Training: NEGATIVE', size=14)
-    # plt.xlabel('Iterations before Converge', size=12)
-    # plt.ylabel('Log Likelihood', size=12)
-    # plt.show()
+    # Plotting Log Likelihood
+    plt.plot(x_pos, logProb_pos, marker='o', color='blue', linewidth=3)
+    plt.title('MEAN Log Likelihood for Training: POSITIVE', size=14)
+    plt.xlabel('Iterations before Converge', size=12)
+    plt.ylabel('Log Likelihood', size=12)
+    plt.show()
+
+    plt.plot(x_neg, logProb_neg, marker='o', color='blue', linewidth=3)
+    plt.title('MEAN Log Likelihood for Training: NEGATIVE', size=14)
+    plt.xlabel('Iterations before Converge', size=12)
+    plt.ylabel('Log Likelihood', size=12)
+    plt.show()
 
     print("=======================================================================================")
     print()
@@ -384,27 +384,26 @@ def main():
         log_prob1 = hmm1.loglikelihood_helper(sample)
         log_prob2 = hmm2.loglikelihood_helper(sample)
 
-        if log_prob1 == -math.inf:
-            print("log_prob1 goes to negative infinity")
-            continue
-        if log_prob2 == -math.inf:
-            print("log_prob2 goes to negative infinity")
-            continue
-        if math.isnan(log_prob1):
-            print("log_prob1 is nan")
-            continue
-        if math.isnan(log_prob2):
-            print("log_prob2 is nan")
+        if math.isnan(log_prob1) is True and math.isnan(log_prob2) is True:
+            print("File Dropped")
             continue
 
         total_sample += 1
-        if log_prob1 > log_prob2:
+
+        if math.isnan(log_prob2) is True and math.isnan(log_prob1) is not True:
+            print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
+                  " CORRECT: NEGATIVE UNDERFLOW.")
+            accurate_sample += 1
+        elif math.isnan(log_prob1) is True and math.isnan(log_prob2) is not True:
+            print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
+                  " WRONG: POSITIVE UNDERFLOW.")
+        elif log_prob1 >= log_prob2:
             print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
                   " CORRECT:  " + str(log_prob1) + " > " + str(log_prob2) + ".")
             accurate_sample += 1
         else:
             print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
-                  " WRONG:  " + str(log_prob1) + " <= " + str(log_prob2) + ".")
+                  " WRONG:  " + str(log_prob1) + " < " + str(log_prob2) + ".")
 
     print()
     count = 0
@@ -416,27 +415,26 @@ def main():
         log_prob1 = hmm1.loglikelihood_helper(sample)
         log_prob2 = hmm2.loglikelihood_helper(sample)
 
-        if log_prob1 == -math.inf:
-            print("log_prob1 goes to negative infinity")
-            continue
-        if log_prob2 == -math.inf:
-            print("log_prob2 goes to negative infinity")
-            continue
-        if math.isnan(log_prob1):
-            print("log_prob1 is nan")
-            continue
-        if math.isnan(log_prob2):
-            print("log_prob2 is nan")
+        if math.isnan(log_prob1) is True and math.isnan(log_prob2) is True:
+            print("File Dropped")
             continue
 
         total_sample += 1
-        if log_prob1 < log_prob2:
+
+        if math.isnan(log_prob1) is True and math.isnan(log_prob2) is not True:
+            print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
+                  " CORRECT: POSITIVE UNDERFLOW.")
+            accurate_sample += 1
+        elif math.isnan(log_prob2) is True and math.isnan(log_prob1) is not True:
+            print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
+                  " WRONG: NEGATIVE UNDERFLOW.")
+        elif log_prob1 <= log_prob2:
             print("Negative Sample " + str(count) + "/" + str(test_neg_num) +
                   " CORRECT:  " + str(log_prob1) + " < " + str(log_prob2) + ".")
             accurate_sample += 1
         else:
             print("Negative Sample " + str(count) + "/" + str(test_neg_num) +
-                  " WRONG:  " + str(log_prob1) + " >= " + str(log_prob2) + ".")
+                  " WRONG:  " + str(log_prob1) + " > " + str(log_prob2) + ".")
 
     print()
     print("Total Accurate Sample: " + str(int(accurate_sample)))
