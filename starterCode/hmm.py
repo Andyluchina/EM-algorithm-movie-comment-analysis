@@ -338,21 +338,21 @@ def main():
     hmm2.emissions = new_neg_emissions
 
     # Save Two Models
-    hmm1.save("PositiveHMM")
-    hmm2.save("NegativeHMM")
+    hmm1.save("PositiveHMM_"+str(args.hidden_states)+"_"+str(args.train_data_size))
+    hmm2.save("NegativeHMM_"+str(args.hidden_states)+"_"+str(args.train_data_size))
 
     # Plotting Log Likelihood
     plt.plot(x_pos, logProb_pos, marker='o', color='blue', linewidth=3)
     plt.title('MEAN Log Likelihood for Training: POSITIVE', size=14)
     plt.xlabel('Iterations before Converge', size=12)
     plt.ylabel('Log Likelihood', size=12)
-    plt.show()
+    plt.savefig('loglikelihood_plot_positive_'+str(args.hidden_states)+"_"+str(args.train_data_size))
 
     plt.plot(x_neg, logProb_neg, marker='o', color='blue', linewidth=3)
     plt.title('MEAN Log Likelihood for Training: NEGATIVE', size=14)
     plt.xlabel('Iterations before Converge', size=12)
     plt.ylabel('Log Likelihood', size=12)
-    plt.show()
+    plt.savefig('loglikelihood_plot_negative_'+str(args.hidden_states)+"_"+str(args.train_data_size))
 
     print("=======================================================================================")
     print()
@@ -478,7 +478,7 @@ def main():
     plt.title('Testing Accuracy Over Time', size=14)
     plt.xlabel('Effective Sample Count (Positive Labeled First)', size=12)
     plt.ylabel('Testing Accuracy', size=12)
-    plt.show()
+    plt.savefig('accuracy_plot_'+str(args.hidden_states)+"_"+str(args.train_data_size))
 
     print()
     print("Program Finishes.")
