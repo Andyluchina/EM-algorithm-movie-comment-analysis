@@ -353,7 +353,7 @@ def main():
     plt.xlabel('Iterations before Converge', size=12)
     plt.ylabel('Log Likelihood', size=12)
     plt.savefig('loglikelihood_plot_negative_'+str(args.hidden_states)+"_"+str(args.train_data_size))
-plt.clf()
+    plt.clf()
     print("=======================================================================================")
     print()
     print("Testing...")
