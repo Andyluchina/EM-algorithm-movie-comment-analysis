@@ -254,16 +254,25 @@ class HMM:
             numer1 = gamma2.sum(axis=0)  # N * N
             transitions = numer1 / denom1[:, None]
 
-            for i in range(num_states):
-                denom = 0.0
-                for t in range(T):
-                    denom += gamma1[t][i]
-                for j in char_set:
-                    numer = 0.0
-                    for t in range(T):
-                        if sample[t] - 1 == j:
-                            numer += gamma1[t][i]
-                    emissions[i][j] = numer / denom
+            numer = np.zeros((num_states, self.vocab_size))
+            denom = gamma1.sum(axis=0)  # 1 * N
+            for t in range(T):
+                numer[:, int(sample[t] - 1)] += gamma1[t].transpose()
+                emissions[:, int(sample[t] - 1)] = np.zeros(num_states).transpose()
+
+            emissions += numer
+            for j in char_set:
+                emissions[:, int(j - 1)] /= denom1.transpose()
+            # for i in range(num_states):
+            #     denom = 0.0
+            #     for t in range(T):
+            #         denom += gamma1[t][i]
+            #     for j in char_set:
+            #         numer = 0.0
+            #         for t in range(T):
+            #             if sample[t] - 1 == j:
+            #                 numer += gamma1[t][i]
+            #         emissions[i][j] = numer / denom
 
             # factor = 0.0
             #
