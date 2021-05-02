@@ -1,3 +1,4 @@
+
 # CSC 246 Project 3
 # Qingjie Lu, qlu7
 # Haoqi Zhang, hzhang84
@@ -33,10 +34,10 @@ from time import time
 
 
 class HMM:
-    __slots__ = ('train_vocab', 'pi', 'transitions', 'emissions', 'num_states', 'vocab_size')
+    __slots__ = ('train_vocab', 'pi', 'transitions', 'emissions', 'num_states', 'vocab_size', 'train_data_size')
 
     # The constructor should initalize all the model parameters.
-    def __init__(self, num_states, vocab_size, train_vocab):
+    def __init__(self, num_states, vocab_size, train_vocab, train_data_size):
 
         pi = np.random.rand(num_states)  # 1 * N
 
@@ -79,6 +80,7 @@ class HMM:
         self.num_states = num_states
         self.vocab_size = vocab_size
         self.train_vocab = train_vocab
+        self.train_data_size = math.log10(train_data_size)
 
     def save(self, filename):
         with open(filename, 'wb') as fh:
@@ -98,7 +100,7 @@ class HMM:
         begin = time()
 
         for sample in dataset:
-            sample_log = self.loglikelihood_helper(sample)
+            sample_log = self.loglikelihood_helper(sample, False)
             if sample_log == -math.inf:
                 print("File Dropped")
                 dropped_file += 1.0
@@ -113,7 +115,7 @@ class HMM:
         return mean_log
 
     # return the loglikelihood for a single sequence (numpy matrix)
-    def loglikelihood_helper(self, sample):
+    def loglikelihood_helper(self, sample, scale):
         pi = self.pi  # 1 * N
         transitions = self.transitions  # N * N
         emissions = self.emissions  # N * vocab_size
@@ -139,7 +141,9 @@ class HMM:
             c[t] = 1.0 / factor
             alpha[t] *= c[t]
 
-        logProb = -np.log10(c).sum()
+        logProb = -np.log10(c).sum()  # Calculate and Scale Log Likelihood
+        if scale is True:
+            logProb -= math.log10(self.train_data_size)
 
         return logProb
 
@@ -250,9 +254,9 @@ def main():
                         help='The maximum number of EM iterations.')
     parser.add_argument('--hidden_states', type=int, default=5,
                         help='The number of hidden states to use.')
-    parser.add_argument('--train_data_size', type=int, default=5000,
+    parser.add_argument('--train_data_size', type=int, default=1000,
                         help='Training data size.')
-    parser.add_argument('--test_data_size', type=int, default=2000,
+    parser.add_argument('--test_data_size', type=int, default=1000,
                         help='Testing data size.')
 
     args = parser.parse_args()
@@ -267,12 +271,12 @@ def main():
 
     print(train_vocab1)
 
-    hmm1 = HMM(args.hidden_states, len(train_vocab1), train_vocab1)  # Positive HMM
+    hmm1 = HMM(args.hidden_states, len(train_vocab1), train_vocab1, len(train_data1))  # Positive HMM
     new_pos_pi = hmm1.pi
     new_pos_transitions = hmm1.transitions
     new_pos_emissions = hmm1.emissions
 
-    hmm2 = HMM(args.hidden_states, len(train_vocab1), train_vocab1)  # Negative HMM
+    hmm2 = HMM(args.hidden_states, len(train_vocab1), train_vocab1, len(train_data2))  # Negative HMM
     new_neg_pi = hmm2.pi
     new_neg_transitions = hmm2.transitions
     new_neg_emissions = hmm2.emissions
@@ -360,6 +364,9 @@ def main():
                     test_pos.append(answer)
                 else:
                     print("Drop Positive Files.")
+
+    print("=======================================================================================")
+
     test_neg = []
     for path in paths_test_neg:
         for filename in os.listdir(path):
@@ -370,6 +377,8 @@ def main():
                 else:
                     print("Drop Negative Files.")
 
+    print("=======================================================================================")
+
     accurate_sample = 0
     total_sample = 0
     count = 0
@@ -377,15 +386,21 @@ def main():
     test_pos_num = len(test_pos)
     test_neg_num = len(test_neg)
 
+    sample_count = [int(0)]
+    accuracy_list = [0.0]
+
     for sample in test_pos:
         count += 1
         if count > args.test_data_size:
             break
-        log_prob1 = hmm1.loglikelihood_helper(sample)
-        log_prob2 = hmm2.loglikelihood_helper(sample)
+        log_prob1 = hmm1.loglikelihood_helper(sample, False)
+        log_prob2 = hmm2.loglikelihood_helper(sample, True)
 
         if math.isnan(log_prob1) is True and math.isnan(log_prob2) is True:
-            print("File Dropped")
+            print("File Dropped.")
+            continue
+        if log_prob1 == log_prob2:
+            print("File Dropped.")
             continue
 
         total_sample += 1
@@ -405,18 +420,27 @@ def main():
             print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
                   " WRONG:  " + str(log_prob1) + " < " + str(log_prob2) + ".")
 
+        sample_count.append(int(total_sample))
+        accuracy_list.append(accurate_sample / total_sample)
+
     print()
+    print("=======================================================================================")
+    print()
+
     count = 0
 
     for sample in test_neg:
         count += 1
         if count > args.test_data_size:
             break
-        log_prob1 = hmm1.loglikelihood_helper(sample)
-        log_prob2 = hmm2.loglikelihood_helper(sample)
+        log_prob1 = hmm1.loglikelihood_helper(sample, True)
+        log_prob2 = hmm2.loglikelihood_helper(sample, False)
 
         if math.isnan(log_prob1) is True and math.isnan(log_prob2) is True:
-            print("File Dropped")
+            print("File Dropped.")
+            continue
+        if log_prob1 == log_prob2:
+            print("File Dropped.")
             continue
 
         total_sample += 1
@@ -428,7 +452,7 @@ def main():
         elif math.isnan(log_prob2) is True and math.isnan(log_prob1) is not True:
             print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
                   " WRONG: NEGATIVE UNDERFLOW.")
-        elif log_prob1 <= log_prob2:
+        elif log_prob2 >= log_prob1:
             print("Negative Sample " + str(count) + "/" + str(test_neg_num) +
                   " CORRECT:  " + str(log_prob1) + " < " + str(log_prob2) + ".")
             accurate_sample += 1
@@ -436,15 +460,26 @@ def main():
             print("Negative Sample " + str(count) + "/" + str(test_neg_num) +
                   " WRONG:  " + str(log_prob1) + " > " + str(log_prob2) + ".")
 
+        sample_count.append(int(total_sample))
+        accuracy_list.append(accurate_sample / total_sample)
+
     print()
     print("Total Accurate Sample: " + str(int(accurate_sample)))
-    print("Total Tested Sample: " + str(int(total_sample)))
+    print("Total Effective Sample: " + str(int(total_sample)))
     print("Total Accuracy: " + str(accurate_sample / total_sample))
+
+    plt.plot(sample_count, accuracy_list, color='green', linewidth=2)
+    plt.title('Testing Accuracy Over Time', size=14)
+    plt.xlabel('Effective Sample Count (Positive Labeled First)', size=12)
+    plt.ylabel('Testing Accuracy', size=12)
+    plt.show()
+
     print()
     print("Program Finishes.")
 
 
 if __name__ == '__main__':
     main()
+
 
 # end of hmm.py

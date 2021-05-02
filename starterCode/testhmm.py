@@ -1,4 +1,9 @@
 
+# CSC 246 Project 3
+# Qingjie Lu, qlu7
+# Haoqi Zhang, hzhang84
+
+
 import argparse
 import numpy as np
 import os
@@ -29,8 +34,6 @@ def main():
     hmm1 = HMM.load_hmm(args.modelpos)
     hmm2 = HMM.load_hmm(args.modelneg)
 
-    print("=======================================================================================")
-    print()
     print("Testing...")
 
     paths_test_pos = [args.test_path_pos]
@@ -45,6 +48,9 @@ def main():
                     test_pos.append(answer)
                 else:
                     print("Drop Positive Files.")
+
+    print("=======================================================================================")
+
     test_neg = []
     for path in paths_test_neg:
         for filename in os.listdir(path):
@@ -55,6 +61,8 @@ def main():
                 else:
                     print("Drop Negative Files.")
 
+    print("=======================================================================================")
+
     accurate_sample = 0
     total_sample = 0
     count = 0
@@ -62,15 +70,21 @@ def main():
     test_pos_num = len(test_pos)
     test_neg_num = len(test_neg)
 
+    sample_count = [int(0)]
+    accuracy_list = [0.0]
+
     for sample in test_pos:
         count += 1
         if count > args.test_data_size:
             break
-        log_prob1 = hmm1.loglikelihood_helper(sample)
-        log_prob2 = hmm2.loglikelihood_helper(sample)
+        log_prob1 = hmm1.loglikelihood_helper(sample, False)
+        log_prob2 = hmm2.loglikelihood_helper(sample, True)
 
         if math.isnan(log_prob1) is True and math.isnan(log_prob2) is True:
-            print("File Dropped")
+            print("File Dropped.")
+            continue
+        if log_prob1 == log_prob2:
+            print("File Dropped.")
             continue
 
         total_sample += 1
@@ -90,18 +104,27 @@ def main():
             print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
                   " WRONG:  " + str(log_prob1) + " < " + str(log_prob2) + ".")
 
+        sample_count.append(int(total_sample))
+        accuracy_list.append(accurate_sample / total_sample)
+
     print()
+    print("=======================================================================================")
+    print()
+
     count = 0
 
     for sample in test_neg:
         count += 1
         if count > args.test_data_size:
             break
-        log_prob1 = hmm1.loglikelihood_helper(sample)
-        log_prob2 = hmm2.loglikelihood_helper(sample)
+        log_prob1 = hmm1.loglikelihood_helper(sample, True)
+        log_prob2 = hmm2.loglikelihood_helper(sample, False)
 
         if math.isnan(log_prob1) is True and math.isnan(log_prob2) is True:
-            print("File Dropped")
+            print("File Dropped.")
+            continue
+        if log_prob1 == log_prob2:
+            print("File Dropped.")
             continue
 
         total_sample += 1
@@ -113,7 +136,7 @@ def main():
         elif math.isnan(log_prob2) is True and math.isnan(log_prob1) is not True:
             print("Positive Sample " + str(count) + "/" + str(test_pos_num) +
                   " WRONG: NEGATIVE UNDERFLOW.")
-        elif log_prob1 <= log_prob2:
+        elif log_prob2 >= log_prob1:
             print("Negative Sample " + str(count) + "/" + str(test_neg_num) +
                   " CORRECT:  " + str(log_prob1) + " < " + str(log_prob2) + ".")
             accurate_sample += 1
@@ -121,10 +144,20 @@ def main():
             print("Negative Sample " + str(count) + "/" + str(test_neg_num) +
                   " WRONG:  " + str(log_prob1) + " > " + str(log_prob2) + ".")
 
+        sample_count.append(int(total_sample))
+        accuracy_list.append(accurate_sample / total_sample)
+
     print()
     print("Total Accurate Sample: " + str(int(accurate_sample)))
-    print("Total Tested Sample: " + str(int(total_sample)))
+    print("Total Effective Sample: " + str(int(total_sample)))
     print("Total Accuracy: " + str(accurate_sample / total_sample))
+
+    plt.plot(sample_count, accuracy_list, color='green', linewidth=2)
+    plt.title('Testing Accuracy Over Time', size=14)
+    plt.xlabel('Effective Sample Count (Positive Labeled First)', size=12)
+    plt.ylabel('Testing Accuracy', size=12)
+    plt.show()
+
     print()
     print("Program Finishes.")
 
