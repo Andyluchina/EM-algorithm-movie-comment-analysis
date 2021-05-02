@@ -347,13 +347,13 @@ def main():
     plt.xlabel('Iterations before Converge', size=12)
     plt.ylabel('Log Likelihood', size=12)
     plt.savefig('loglikelihood_plot_positive_'+str(args.hidden_states)+"_"+str(args.train_data_size))
-
+    plt.clf()
     plt.plot(x_neg, logProb_neg, marker='o', color='blue', linewidth=3)
     plt.title('MEAN Log Likelihood for Training: NEGATIVE', size=14)
     plt.xlabel('Iterations before Converge', size=12)
     plt.ylabel('Log Likelihood', size=12)
     plt.savefig('loglikelihood_plot_negative_'+str(args.hidden_states)+"_"+str(args.train_data_size))
-
+plt.clf()
     print("=======================================================================================")
     print()
     print("Testing...")
