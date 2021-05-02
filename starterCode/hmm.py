@@ -1,4 +1,3 @@
-
 # CSC 246 Project 3
 # Qingjie Lu, qlu7
 # Haoqi Zhang, hzhang84
@@ -159,11 +158,10 @@ class HMM:
         emissions = self.emissions
         num_states = self.num_states
 
-
         # E-STEP, FORWARD, ALPHA
         print("Running Alpha...")
         c = np.zeros(T, dtype=np.longdouble)
-        alpha = np.zeros((T, num_states))
+        alpha = np.zeros((T, num_states), dtype=np.longdouble)
         alpha[0] = np.multiply(pi, emissions[:, int(big_file[0] - 1)].transpose())
         c[0] = 1.0 / alpha[0].sum()
         alpha[0] *= c[0]
@@ -174,7 +172,6 @@ class HMM:
             c[t] = 1.0 / alpha[t].sum()
             alpha[t] *= c[t]
 
-
         # E-STEP, BACKWARD, BETA
         print("Running Beta...")
         beta = np.zeros((T, num_states), dtype=np.longdouble)
@@ -184,26 +181,24 @@ class HMM:
 
         for t in range(T - 2, -1, -1):
             beta[t] = transitions.dot(np.multiply(beta[t + 1].transpose(),
-                                                      emissions[:, int(big_file[t + 1] - 1)])).transpose()
+                                                  emissions[:, int(big_file[t + 1] - 1)])).transpose()
             beta[t] *= c[t]
-
 
         # E-STEP, VITERBI, GAMMA
         print("Running Gamma...")
         for t in range(T - 1):
             gamma2[t] = np.multiply(transitions, alpha[t].transpose()
                                     .dot(np.multiply(beta[t + 1],
-                                                        emissions[:, int(big_file[t + 1] - 1)].transpose())))
+                                                     emissions[:, int(big_file[t + 1] - 1)].transpose())))
             gamma1[t] = np.sum(gamma2[t], axis=0)
         gamma1[T - 1] = np.copy(alpha[T - 1])
-
 
         # M-STEP, PARAMETER RE-ESTIMATION
         print("Parameter Re-Estimation...")
         pi = np.copy(gamma1[0])
 
         denom1 = gamma1.sum(axis=0)  # 1 * N
-        numer1 = gamma2.sum(axis=0) #N * N
+        numer1 = gamma2.sum(axis=0)  # N * N
         transitions = numer1 / denom1[:, None]
 
         denom = gamma1.sum(axis=0)  # 1 * N
@@ -213,13 +208,17 @@ class HMM:
             numer[:, int(big_file[t] - 1)] += gamma1[t].transpose()
         emissions = numer / denom[:, None]
 
-        self.pi = pi / pi.sum()  # Update pi
+        self.pi = pi
+        self.transitions = transitions
+        self.emissions = emissions
 
-        sum_of_factors = transitions.sum(axis=1)
-        self.transitions = transitions / sum_of_factors[:, None]  # Update transitions
-
-        sum_of_factors = emissions.sum(axis=1)
-        self.emissions = emissions / sum_of_factors[:, None]  # Update emissions
+        # self.pi = pi / pi.sum()  # Update pi
+        #
+        # sum_of_factors = transitions.sum(axis=1)
+        # self.transitions = transitions / sum_of_factors[:, None]  # Update transitions
+        #
+        # sum_of_factors = emissions.sum(axis=1)
+        # self.emissions = emissions / sum_of_factors[:, None]  # Update emissions
 
         end = time()
         print('EM Finished. Done in', end - begin, 'seconds.')
@@ -232,7 +231,6 @@ class HMM:
 
 
 def main():
-
     parser = argparse.ArgumentParser(description='Program to build and train a neural network.')
 
     parser.add_argument('--train_path_pos',
@@ -250,9 +248,9 @@ def main():
 
     parser.add_argument('--max_iters', type=int, default=10,
                         help='The maximum number of EM iterations.')
-    parser.add_argument('--hidden_states', type=int, default=3,
+    parser.add_argument('--hidden_states', type=int, default=5,
                         help='The number of hidden states to use.')
-    parser.add_argument('--train_data_size', type=int, default=2000,
+    parser.add_argument('--train_data_size', type=int, default=1000,
                         help='Training data size.')
     parser.add_argument('--test_data_size', type=int, default=2000,
                         help='Testing data size.')
@@ -279,7 +277,6 @@ def main():
     new_neg_transitions = hmm2.transitions
     new_neg_emissions = hmm2.emissions
 
-
     # Positive EM
     logProb = hmm1.loglikelihood(train_data1)
     # logProb_pos = [round(logProb, 2)]
@@ -290,18 +287,16 @@ def main():
         converge, logProb = hmm1.em_step(train_data1, logProb)
         # logProb_pos.append(round(logProb, 2))  # Drawing, y-axis
         # x_pos.append(i)  # Drawing, x-axis
+        new_pos_pi = hmm1.pi
+        new_pos_transitions = hmm1.transitions
+        new_pos_emissions = hmm1.emissions
         if converge is True:
             print("Congratulations. EM algorithm converges after " + str(i) + " iteration(s).")
             break
-        else:
-            new_pos_pi = hmm1.pi
-            new_pos_transitions = hmm1.transitions
-            new_pos_emissions = hmm1.emissions
     if converge is False:
         print("POSITIVE EM algorithm is not converging.")
 
     print("=======================================================================================")
-
 
     # Negative EM
     logProb = hmm2.loglikelihood(train_data2)
@@ -313,16 +308,14 @@ def main():
         converge, logProb = hmm2.em_step(train_data2, logProb)
         # logProb_neg.append(round(logProb, 2))
         # x_neg.append(i)
+        new_neg_pi = hmm2.pi
+        new_neg_transitions = hmm2.transitions
+        new_neg_emissions = hmm2.emissions
         if converge is True:
             print("Congratulations. EM algorithm converges after " + str(i) + " iteration(s).")
             break
-        else:
-            new_neg_pi = hmm2.pi
-            new_neg_transitions = hmm2.transitions
-            new_neg_emissions = hmm2.emissions
     if converge is False:
         print("NEGATIVE EM algorithm is not converging.")
-
 
     # Update Positive HMM
     hmm1.pi = new_pos_pi
@@ -455,6 +448,5 @@ def main():
 
 if __name__ == '__main__':
     main()
-
 
 # end of hmm.py
