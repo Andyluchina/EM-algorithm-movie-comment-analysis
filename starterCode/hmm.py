@@ -234,6 +234,12 @@ class HMM:
         return True, logProb  # EM Converge
 
 
+################################ MAIN HERE ################################
+################################ MAIN HERE ################################
+################################ MAIN HERE ################################
+################################ MAIN HERE ################################
+################################ MAIN HERE ################################
+
 def main():
     parser = argparse.ArgumentParser(description='Program to build and train a neural network.')
 
@@ -250,13 +256,13 @@ def main():
                         default='/Users/zhanghaoqi/Desktop/csc246p3/csc246project3/imdbFor246/test/neg',
                         help='Path to the testing data directory.')
 
-    parser.add_argument('--max_iters', type=int, default=1000,
+    parser.add_argument('--max_iters', type=int, default=100,
                         help='The maximum number of EM iterations.')
-    parser.add_argument('--hidden_states', type=int, default=5,
+    parser.add_argument('--hidden_states', type=int, default=3,
                         help='The number of hidden states to use.')
-    parser.add_argument('--train_data_size', type=int, default=1000,
+    parser.add_argument('--train_data_size', type=int, default=200,
                         help='Training data size.')
-    parser.add_argument('--test_data_size', type=int, default=1000,
+    parser.add_argument('--test_data_size', type=int, default=100000,
                         help='Testing data size.')
 
     args = parser.parse_args()
